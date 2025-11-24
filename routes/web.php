@@ -17,6 +17,9 @@ use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\AccountReceivableController;
 use App\Http\Controllers\AccountPayableController;
 use App\Http\Controllers\CashRegisterController;
+use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\BankTransactionController;
+use App\Http\Controllers\CheckController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -187,4 +190,37 @@ Route::middleware('auth')->group(function () {
     Route::get('/cash-registers/{cashRegister}', [CashRegisterController::class, 'show'])->name('cash-registers.show');
     Route::post('/cash-registers/{cashRegister}/add-movement', [CashRegisterController::class, 'addMovement'])->name('cash-registers.add-movement');
     Route::post('/cash-registers/{cashRegister}/close', [CashRegisterController::class, 'close'])->name('cash-registers.close');
+
+    // Bancos - Cuentas Bancarias
+    Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
+    Route::get('/bank-accounts/data', [BankAccountController::class, 'data'])->name('bank-accounts.data');
+    Route::get('/bank-accounts/list', [BankAccountController::class, 'list'])->name('bank-accounts.list');
+    Route::post('/bank-accounts', [BankAccountController::class, 'store'])->name('bank-accounts.store');
+    Route::get('/bank-accounts/{bankAccount}', [BankAccountController::class, 'show'])->name('bank-accounts.show');
+    Route::put('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
+    Route::post('/bank-accounts/{bankAccount}/toggle-status', [BankAccountController::class, 'toggleStatus'])->name('bank-accounts.toggle-status');
+    Route::get('/bank-accounts/{bankAccount}/reconciliation', [BankAccountController::class, 'reconciliation'])->name('bank-accounts.reconciliation');
+    Route::post('/bank-accounts/{bankAccount}/reconcile', [BankAccountController::class, 'reconcile'])->name('bank-accounts.reconcile');
+
+    // Bancos - Transacciones
+    Route::get('/bank-transactions', [BankTransactionController::class, 'index'])->name('bank-transactions.index');
+    Route::get('/bank-transactions/data', [BankTransactionController::class, 'data'])->name('bank-transactions.data');
+    Route::get('/bank-transactions/create', [BankTransactionController::class, 'create'])->name('bank-transactions.create');
+    Route::post('/bank-transactions', [BankTransactionController::class, 'store'])->name('bank-transactions.store');
+    Route::post('/bank-transactions/transfer', [BankTransactionController::class, 'transfer'])->name('bank-transactions.transfer');
+    Route::post('/bank-transactions/cash-deposit', [BankTransactionController::class, 'cashDeposit'])->name('bank-transactions.cash-deposit');
+    Route::post('/bank-transactions/cash-withdrawal', [BankTransactionController::class, 'cashWithdrawal'])->name('bank-transactions.cash-withdrawal');
+    Route::get('/bank-transactions/{bankTransaction}', [BankTransactionController::class, 'show'])->name('bank-transactions.show');
+    Route::post('/bank-transactions/{bankTransaction}/cancel', [BankTransactionController::class, 'cancel'])->name('bank-transactions.cancel');
+
+    // Bancos - Cheques
+    Route::get('/checks', [CheckController::class, 'index'])->name('checks.index');
+    Route::get('/checks/data', [CheckController::class, 'data'])->name('checks.data');
+    Route::get('/checks/create', [CheckController::class, 'create'])->name('checks.create');
+    Route::post('/checks', [CheckController::class, 'store'])->name('checks.store');
+    Route::get('/checks/{check}', [CheckController::class, 'show'])->name('checks.show');
+    Route::post('/checks/{check}/deposit', [CheckController::class, 'depositCheck'])->name('checks.deposit');
+    Route::post('/checks/{check}/cash', [CheckController::class, 'cashCheck'])->name('checks.cash');
+    Route::post('/checks/{check}/bounce', [CheckController::class, 'bounceCheck'])->name('checks.bounce');
+    Route::post('/checks/{check}/cancel', [CheckController::class, 'cancel'])->name('checks.cancel');
 });

@@ -284,6 +284,28 @@
                     <i class="bi bi-cash-coin"></i> Caja
                 </a>
             </li>
+            <li class="has-submenu {{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'active' : '' }}">
+                    <i class="bi bi-bank"></i> Bancos
+                </a>
+                <ul class="submenu {{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'show' : '' }}">
+                    <li>
+                        <a href="{{ route('bank-accounts.index') }}" class="{{ request()->routeIs('bank-accounts.*') ? 'active' : '' }}">
+                            <i class="bi bi-credit-card-2-front"></i> Cuentas Bancarias
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bank-transactions.index') }}" class="{{ request()->routeIs('bank-transactions.*') ? 'active' : '' }}">
+                            <i class="bi bi-arrow-left-right"></i> Movimientos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('checks.index') }}" class="{{ request()->routeIs('checks.*') ? 'active' : '' }}">
+                            <i class="bi bi-receipt"></i> Cheques
+                        </a>
+                    </li>
+                </ul>
+            </li>
             <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Usuarios

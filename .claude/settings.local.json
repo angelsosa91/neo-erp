@@ -4,7 +4,9 @@
       "Bash(php artisan make:migration:*)",
       "Bash(c:/xampp/php/php.exe artisan migrate:*)",
       "Bash(c:xamppphpphp.exe artisan migrate)",
-      "Bash(php artisan migrate:*)"
+      "Bash(php artisan migrate:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan migrate:rollback:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan db:wipe)"
     ],
     "deny": [],
     "ask": []
