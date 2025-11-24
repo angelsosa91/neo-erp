@@ -25,11 +25,15 @@ class Sale extends Model
         'total',
         'status',
         'payment_method',
+        'payment_type',
+        'credit_days',
+        'credit_due_date',
         'notes',
     ];
 
     protected $casts = [
         'sale_date' => 'date',
+        'credit_due_date' => 'date',
         'subtotal_exento' => 'decimal:2',
         'subtotal_5' => 'decimal:2',
         'iva_5' => 'decimal:2',
@@ -60,6 +64,14 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Relación con la cuenta por cobrar
+     */
+    public function accountReceivable()
+    {
+        return $this->hasOne(AccountReceivable::class);
     }
 
     /**

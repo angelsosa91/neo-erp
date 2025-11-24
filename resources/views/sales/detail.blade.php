@@ -63,10 +63,47 @@
                 {{ $sale->user->name }}
             </div>
             <div class="col-md-3">
+                <strong>Tipo de Venta:</strong><br>
+                @if($sale->payment_type === 'credit')
+                    <span class="badge bg-warning">Crédito</span>
+                @else
+                    <span class="badge bg-success">Contado</span>
+                @endif
+            </div>
+            <div class="col-md-3">
                 <strong>Forma de Pago:</strong><br>
                 {{ $sale->payment_method ?? 'No especificado' }}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
+                @if($sale->payment_type === 'credit' && $sale->credit_due_date)
+                    <strong>Vencimiento:</strong><br>
+                    {{ $sale->credit_due_date->format('d/m/Y') }}
+                    <small>({{ $sale->credit_days }} días)</small>
+                @endif
+            </div>
+        </div>
+
+        @if($sale->payment_type === 'credit' && $sale->accountReceivable)
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-wallet2"></i>
+            <strong>Cuenta por Cobrar:</strong>
+            <a href="{{ route('account-receivables.show', $sale->accountReceivable->id) }}" class="alert-link">
+                {{ $sale->accountReceivable->document_number }}
+            </a>
+            - Saldo: <strong>{{ number_format($sale->accountReceivable->balance, 0, ',', '.') }} Gs.</strong>
+            - Estado:
+            @if($sale->accountReceivable->status === 'pending')
+                <span class="badge bg-warning">Pendiente</span>
+            @elseif($sale->accountReceivable->status === 'partial')
+                <span class="badge bg-info">Parcial</span>
+            @elseif($sale->accountReceivable->status === 'paid')
+                <span class="badge bg-success">Pagado</span>
+            @endif
+        </div>
+        @endif
+
+        <div class="row mb-4">
+            <div class="col-md-12">
                 <strong>Notas:</strong><br>
                 {{ $sale->notes ?? 'Sin notas' }}
             </div>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Product;
+use App\Models\Customer;
+use App\Models\AccountReceivable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -88,6 +90,8 @@ class SaleController extends Controller
         $validator = Validator::make($request->all(), [
             'customer_id' => 'nullable|exists:customers,id',
             'sale_date' => 'required|date',
+            'payment_type' => 'required|in:cash,credit',
+            'credit_days' => 'required_if:payment_type,credit|nullable|integer|min:1',
             'payment_method' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
@@ -100,8 +104,21 @@ class SaleController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Validar que ventas a crédito tengan cliente
+        if ($request->payment_type === 'credit' && !$request->customer_id) {
+            return response()->json([
+                'errors' => ['customer_id' => ['Las ventas a crédito requieren un cliente']]
+            ], 422);
+        }
+
         try {
             DB::beginTransaction();
+
+            // Calcular fecha de vencimiento si es a crédito
+            $creditDueDate = null;
+            if ($request->payment_type === 'credit') {
+                $creditDueDate = date('Y-m-d', strtotime($request->sale_date . ' + ' . $request->credit_days . ' days'));
+            }
 
             // Crear la venta
             $sale = Sale::create([
@@ -110,6 +127,9 @@ class SaleController extends Controller
                 'user_id' => auth()->id(),
                 'sale_number' => Sale::generateSaleNumber(auth()->user()->tenant_id),
                 'sale_date' => $request->sale_date,
+                'payment_type' => $request->payment_type,
+                'credit_days' => $request->credit_days,
+                'credit_due_date' => $creditDueDate,
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
                 'status' => 'draft',
@@ -210,6 +230,27 @@ class SaleController extends Controller
             $sale->status = 'confirmed';
             $sale->save();
 
+            // Si es venta a crédito, crear cuenta por cobrar
+            if ($sale->payment_type === 'credit' && $sale->customer_id) {
+                $customer = Customer::find($sale->customer_id);
+
+                AccountReceivable::create([
+                    'tenant_id' => $sale->tenant_id,
+                    'document_number' => AccountReceivable::generateDocumentNumber($sale->tenant_id),
+                    'document_date' => $sale->sale_date,
+                    'due_date' => $sale->credit_due_date,
+                    'customer_id' => $sale->customer_id,
+                    'customer_name' => $customer->name,
+                    'sale_id' => $sale->id,
+                    'sale_number' => $sale->sale_number,
+                    'description' => 'Venta a crédito - ' . $sale->sale_number,
+                    'amount' => $sale->total,
+                    'paid_amount' => 0,
+                    'balance' => $sale->total,
+                    'status' => 'pending',
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -290,7 +331,7 @@ class SaleController extends Controller
      */
     public function detail(Sale $sale)
     {
-        $sale->load(['customer', 'user', 'items.product']);
+        $sale->load(['customer', 'user', 'items.product', 'accountReceivable']);
         return view('sales.detail', compact('sale'));
     }
 }

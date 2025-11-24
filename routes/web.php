@@ -14,6 +14,7 @@ use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\InventoryAdjustmentController;
+use App\Http\Controllers\AccountReceivableController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -153,4 +154,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/inventory-adjustments/{inventoryAdjustment}/confirm', [InventoryAdjustmentController::class, 'confirm'])->name('inventory-adjustments.confirm');
     Route::post('/inventory-adjustments/{inventoryAdjustment}/cancel', [InventoryAdjustmentController::class, 'cancel'])->name('inventory-adjustments.cancel');
     Route::delete('/inventory-adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'destroy'])->name('inventory-adjustments.destroy');
+
+    // Cuentas por Cobrar
+    Route::get('/account-receivables', [AccountReceivableController::class, 'index'])->name('account-receivables.index');
+    Route::get('/account-receivables/data', [AccountReceivableController::class, 'data'])->name('account-receivables.data');
+    Route::get('/account-receivables/by-customer', [AccountReceivableController::class, 'byCustomer'])->name('account-receivables.by-customer');
+    Route::get('/account-receivables/create', [AccountReceivableController::class, 'create'])->name('account-receivables.create');
+    Route::post('/account-receivables', [AccountReceivableController::class, 'store'])->name('account-receivables.store');
+    Route::get('/account-receivables/{accountReceivable}', [AccountReceivableController::class, 'show'])->name('account-receivables.show');
+    Route::post('/account-receivables/{accountReceivable}/add-payment', [AccountReceivableController::class, 'addPayment'])->name('account-receivables.add-payment');
+    Route::post('/account-receivables/{accountReceivable}/cancel', [AccountReceivableController::class, 'cancel'])->name('account-receivables.cancel');
+    Route::delete('/account-receivables/{accountReceivable}', [AccountReceivableController::class, 'destroy'])->name('account-receivables.destroy');
 });

@@ -270,6 +270,11 @@
                 </ul>
             </li>
             <li>
+                <a href="{{ route('account-receivables.index') }}" class="{{ request()->routeIs('account-receivables.*') ? 'active' : '' }}">
+                    <i class="bi bi-wallet2"></i> Cuentas por Cobrar
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Usuarios
                 </a>

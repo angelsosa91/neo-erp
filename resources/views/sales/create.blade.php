@@ -21,21 +21,35 @@
             @csrf
             <div class="row mb-3">
                 <div class="col-md-3">
-                    <label class="form-label">Fecha</label>
+                    <label class="form-label">Fecha <span class="text-danger">*</span></label>
                     <input type="date" class="form-control" id="sale_date" name="sale_date"
                            value="{{ date('Y-m-d') }}" required>
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label">Cliente</label>
+                    <label class="form-label">Cliente <span class="text-danger" id="customer_required" style="display:none;">*</span></label>
                     <input id="customer_id" name="customer_id" style="width: 100%;">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label class="form-label">Tipo de Venta <span class="text-danger">*</span></label>
+                    <select class="form-select" id="payment_type" name="payment_type" onchange="toggleCreditFields()">
+                        <option value="cash">Contado</option>
+                        <option value="credit">Crédito</option>
+                    </select>
+                </div>
+                <div class="col-md-2" id="credit_days_field" style="display:none;">
+                    <label class="form-label">Días de Crédito <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="credit_days" name="credit_days" min="1" value="30">
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-12">
                     <label class="form-label">Forma de Pago</label>
                     <select class="form-select" id="payment_method" name="payment_method">
-                        <option value="Contado">Contado</option>
-                        <option value="Crédito">Crédito</option>
+                        <option value="Efectivo">Efectivo</option>
                         <option value="Tarjeta">Tarjeta</option>
                         <option value="Transferencia">Transferencia</option>
+                        <option value="Cheque">Cheque</option>
                     </select>
                 </div>
             </div>
@@ -206,6 +220,17 @@ $(function() {
     });
 });
 
+function toggleCreditFields() {
+    var paymentType = $('#payment_type').val();
+    if (paymentType === 'credit') {
+        $('#credit_days_field').show();
+        $('#customer_required').show();
+    } else {
+        $('#credit_days_field').hide();
+        $('#customer_required').hide();
+    }
+}
+
 function addItem() {
     if (!selectedProduct) {
         $.messager.alert('Información', 'Seleccione un producto', 'info');
@@ -325,9 +350,20 @@ function saveSale() {
         return;
     }
 
+    var paymentType = $('#payment_type').val();
+    var customerId = $('#customer_id').combogrid('getValue') || null;
+
+    // Validar que ventas a crédito tengan cliente
+    if (paymentType === 'credit' && !customerId) {
+        $.messager.alert('Error', 'Las ventas a crédito requieren un cliente', 'error');
+        return;
+    }
+
     var data = {
-        customer_id: $('#customer_id').combogrid('getValue') || null,
+        customer_id: customerId,
         sale_date: $('#sale_date').val(),
+        payment_type: paymentType,
+        credit_days: $('#credit_days').val(),
         payment_method: $('#payment_method').val(),
         notes: $('#notes').val(),
         items: items

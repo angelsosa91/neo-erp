@@ -1,0 +1,214 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AccountReceivable;
+use App\Models\AccountReceivablePayment;
+use App\Models\Customer;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class AccountReceivableController extends Controller
+{
+    public function index()
+    {
+        return view('account-receivables.index');
+    }
+
+    public function data(Request $request)
+    {
+        $query = AccountReceivable::query();
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('document_number', 'like', '%' . $request->search . '%')
+                  ->orWhere('customer_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('sale_number', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->customer_id) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        $sort = $request->sort ?? 'id';
+        $order = $request->order ?? 'desc';
+        $query->orderBy($sort, $order);
+
+        $total = $query->count();
+        $rows = $query->skip($request->offset ?? 0)
+            ->take($request->limit ?? 20)
+            ->get();
+
+        return response()->json([
+            'total' => $total,
+            'rows' => $rows
+        ]);
+    }
+
+    public function create()
+    {
+        $documentNumber = AccountReceivable::generateDocumentNumber(Auth::user()->tenant_id);
+        return view('account-receivables.create', compact('documentNumber'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'document_date' => 'required|date',
+            'due_date' => 'required|date',
+            'customer_id' => 'required|exists:customers,id',
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        $customer = Customer::findOrFail($request->customer_id);
+
+        $receivable = AccountReceivable::create([
+            'tenant_id' => Auth::user()->tenant_id,
+            'document_number' => AccountReceivable::generateDocumentNumber(Auth::user()->tenant_id),
+            'document_date' => $request->document_date,
+            'due_date' => $request->due_date,
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'description' => $request->description,
+            'amount' => $request->amount,
+            'paid_amount' => 0,
+            'balance' => $request->amount,
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuenta por cobrar creada exitosamente',
+            'id' => $receivable->id
+        ]);
+    }
+
+    public function show($id)
+    {
+        $receivable = AccountReceivable::with(['customer', 'sale', 'payments.user'])->findOrFail($id);
+        return view('account-receivables.detail', compact('receivable'));
+    }
+
+    public function addPayment(Request $request, $id)
+    {
+        $request->validate([
+            'payment_date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|in:cash,transfer,check,card,other',
+        ]);
+
+        $receivable = AccountReceivable::findOrFail($id);
+
+        if ($receivable->status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta cuenta ya está pagada'
+            ], 400);
+        }
+
+        if ($receivable->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta cuenta está anulada'
+            ], 400);
+        }
+
+        if ($request->amount > $receivable->balance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El monto del pago excede el saldo pendiente'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $payment = AccountReceivablePayment::create([
+                'account_receivable_id' => $receivable->id,
+                'payment_number' => AccountReceivablePayment::generatePaymentNumber($receivable->id),
+                'payment_date' => $request->payment_date,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'reference' => $request->reference,
+                'notes' => $request->notes,
+                'user_id' => Auth::id(),
+            ]);
+
+            $receivable->updateBalance();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pago registrado exitosamente'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el pago: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function cancel($id)
+    {
+        $receivable = AccountReceivable::findOrFail($id);
+
+        if ($receivable->paid_amount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede anular una cuenta con pagos registrados'
+            ], 400);
+        }
+
+        $receivable->status = 'cancelled';
+        $receivable->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuenta por cobrar anulada exitosamente'
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $receivable = AccountReceivable::findOrFail($id);
+
+        if ($receivable->paid_amount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede eliminar una cuenta con pagos registrados'
+            ], 400);
+        }
+
+        $receivable->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuenta por cobrar eliminada exitosamente'
+        ]);
+    }
+
+    public function byCustomer(Request $request)
+    {
+        $query = AccountReceivable::select('customer_id', 'customer_name')
+            ->selectRaw('COUNT(*) as total_documents')
+            ->selectRaw('SUM(amount) as total_amount')
+            ->selectRaw('SUM(paid_amount) as total_paid')
+            ->selectRaw('SUM(balance) as total_balance')
+            ->where('status', '!=', 'cancelled')
+            ->groupBy('customer_id', 'customer_name')
+            ->having('total_balance', '>', 0)
+            ->orderBy('total_balance', 'desc');
+
+        $customers = $query->get();
+
+        return view('account-receivables.by-customer', compact('customers'));
+    }
+}
