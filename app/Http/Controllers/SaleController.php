@@ -1,0 +1,296 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+
+class SaleController extends Controller
+{
+    /**
+     * Mostrar listado de ventas
+     */
+    public function index()
+    {
+        return view('sales.index');
+    }
+
+    /**
+     * Obtener datos para el DataGrid
+     */
+    public function data(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $rows = $request->get('rows', 20);
+        $sort = $request->get('sort', 'id');
+        $order = $request->get('order', 'desc');
+        $search = $request->get('search', '');
+
+        $query = Sale::with(['customer', 'user'])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('sale_number', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            });
+
+        $total = $query->count();
+
+        $sales = $query->orderBy($sort, $order)
+            ->skip(($page - 1) * $rows)
+            ->take($rows)
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'sale_number' => $sale->sale_number,
+                    'sale_date' => $sale->sale_date->format('d/m/Y'),
+                    'customer_name' => $sale->customer ? $sale->customer->name : 'Sin cliente',
+                    'user_name' => $sale->user->name,
+                    'subtotal_exento' => number_format($sale->subtotal_exento, 0, ',', '.'),
+                    'subtotal_5' => number_format($sale->subtotal_5, 0, ',', '.'),
+                    'iva_5' => number_format($sale->iva_5, 0, ',', '.'),
+                    'subtotal_10' => number_format($sale->subtotal_10, 0, ',', '.'),
+                    'iva_10' => number_format($sale->iva_10, 0, ',', '.'),
+                    'total' => number_format($sale->total, 0, ',', '.'),
+                    'status' => $sale->status,
+                    'status_label' => $sale->status_label,
+                    'payment_method' => $sale->payment_method,
+                ];
+            });
+
+        return response()->json([
+            'total' => $total,
+            'rows' => $sales
+        ]);
+    }
+
+    /**
+     * Mostrar formulario de creación
+     */
+    public function create()
+    {
+        $saleNumber = Sale::generateSaleNumber(auth()->user()->tenant_id);
+        return view('sales.create', compact('saleNumber'));
+    }
+
+    /**
+     * Guardar nueva venta
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'customer_id' => 'nullable|exists:customers,id',
+            'sale_date' => 'required|date',
+            'payment_method' => 'nullable|string|max:50',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Crear la venta
+            $sale = Sale::create([
+                'tenant_id' => auth()->user()->tenant_id,
+                'customer_id' => $request->customer_id,
+                'user_id' => auth()->id(),
+                'sale_number' => Sale::generateSaleNumber(auth()->user()->tenant_id),
+                'sale_date' => $request->sale_date,
+                'payment_method' => $request->payment_method,
+                'notes' => $request->notes,
+                'status' => 'draft',
+            ]);
+
+            // Crear los items
+            foreach ($request->items as $itemData) {
+                $product = Product::find($itemData['product_id']);
+
+                $item = new SaleItem([
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'tax_rate' => $product->tax_rate,
+                ]);
+
+                $item->calculateValues();
+                $sale->items()->save($item);
+            }
+
+            // Calcular totales de la venta
+            $sale->load('items');
+            $sale->calculateTotals();
+            $sale->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta creada correctamente',
+                'data' => $sale
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'errors' => ['general' => ['Error al crear la venta: ' . $e->getMessage()]]
+            ], 422);
+        }
+    }
+
+    /**
+     * Mostrar una venta
+     */
+    public function show(Sale $sale)
+    {
+        $sale->load(['customer', 'user', 'items.product']);
+
+        return response()->json([
+            'sale' => $sale,
+            'items' => $sale->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'tax_rate' => $item->tax_rate,
+                    'subtotal' => $item->subtotal,
+                    'tax_amount' => $item->tax_amount,
+                    'total' => $item->total,
+                ];
+            })
+        ]);
+    }
+
+    /**
+     * Confirmar venta (descontar stock)
+     */
+    public function confirm(Sale $sale)
+    {
+        if ($sale->status !== 'draft') {
+            return response()->json([
+                'errors' => ['general' => ['Solo se pueden confirmar ventas en borrador']]
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Verificar stock disponible
+            foreach ($sale->items as $item) {
+                if ($item->product && $item->product->track_stock) {
+                    if ($item->product->stock < $item->quantity) {
+                        throw new \Exception("Stock insuficiente para {$item->product_name}. Disponible: {$item->product->stock}");
+                    }
+                }
+            }
+
+            // Descontar stock
+            foreach ($sale->items as $item) {
+                if ($item->product && $item->product->track_stock) {
+                    $item->product->decrement('stock', $item->quantity);
+                }
+            }
+
+            $sale->status = 'confirmed';
+            $sale->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta confirmada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'errors' => ['general' => [$e->getMessage()]]
+            ], 422);
+        }
+    }
+
+    /**
+     * Anular venta (devolver stock)
+     */
+    public function cancel(Sale $sale)
+    {
+        if ($sale->status === 'cancelled') {
+            return response()->json([
+                'errors' => ['general' => ['La venta ya está anulada']]
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Si estaba confirmada, devolver stock
+            if ($sale->status === 'confirmed') {
+                foreach ($sale->items as $item) {
+                    if ($item->product && $item->product->track_stock) {
+                        $item->product->increment('stock', $item->quantity);
+                    }
+                }
+            }
+
+            $sale->status = 'cancelled';
+            $sale->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta anulada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'errors' => ['general' => ['Error al anular la venta: ' . $e->getMessage()]]
+            ], 422);
+        }
+    }
+
+    /**
+     * Eliminar venta (solo borradores)
+     */
+    public function destroy(Sale $sale)
+    {
+        if ($sale->status !== 'draft') {
+            return response()->json([
+                'errors' => ['general' => ['Solo se pueden eliminar ventas en borrador']]
+            ], 422);
+        }
+
+        $sale->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Venta eliminada correctamente'
+        ]);
+    }
+
+    /**
+     * Ver detalle de venta (vista)
+     */
+    public function detail(Sale $sale)
+    {
+        $sale->load(['customer', 'user', 'items.product']);
+        return view('sales.detail', compact('sale'));
+    }
+}
