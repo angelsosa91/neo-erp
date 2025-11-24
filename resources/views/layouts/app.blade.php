@@ -159,11 +159,11 @@
                     <i class="bi bi-truck"></i> Proveedores
                 </a>
             </li>
-            <li class="has-submenu {{ request()->routeIs('products.*', 'categories.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('products.*', 'categories.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'active' : '' }}">
                     <i class="bi bi-box"></i> Inventario
                 </a>
-                <ul class="submenu {{ request()->routeIs('products.*', 'categories.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'active' : '' }}">
                             <i class="bi bi-box-seam"></i> Productos
@@ -172,6 +172,11 @@
                     <li>
                         <a href="{{ route('categories.index') }}" class="{{ request()->routeIs('categories.*') ? 'active' : '' }}">
                             <i class="bi bi-tags"></i> Categorías
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('inventory-adjustments.index') }}" class="{{ request()->routeIs('inventory-adjustments.*') ? 'active' : '' }}">
+                            <i class="bi bi-sliders"></i> Ajustes
                         </a>
                     </li>
                 </ul>
@@ -210,15 +215,59 @@
                     </li>
                 </ul>
             </li>
-            <li>
-                <a href="#" class="">
+            <li class="has-submenu {{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'active' : '' }}">
                     <i class="bi bi-cash-stack"></i> Gastos
                 </a>
+                <ul class="submenu {{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'show' : '' }}">
+                    <li>
+                        <a href="{{ route('expenses.create') }}" class="{{ request()->routeIs('expenses.create') ? 'active' : '' }}">
+                            <i class="bi bi-plus-circle"></i> Nuevo Gasto
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('expenses.index') }}" class="{{ request()->routeIs('expenses.index') ? 'active' : '' }}">
+                            <i class="bi bi-list-ul"></i> Listado
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('expense-categories.index') }}" class="{{ request()->routeIs('expense-categories.*') ? 'active' : '' }}">
+                            <i class="bi bi-tags"></i> Categorías
+                        </a>
+                    </li>
+                </ul>
             </li>
-            <li>
-                <a href="#" class="">
+            <li class="has-submenu {{ request()->routeIs('reports.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="bi bi-file-bar-graph"></i> Reportes
                 </a>
+                <ul class="submenu {{ request()->routeIs('reports.*') ? 'show' : '' }}">
+                    <li>
+                        <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.index') ? 'active' : '' }}">
+                            <i class="bi bi-grid"></i> Centro de Reportes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.sales') }}" class="{{ request()->routeIs('reports.sales') ? 'active' : '' }}">
+                            <i class="bi bi-cart-check"></i> Ventas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.purchases') }}" class="{{ request()->routeIs('reports.purchases') ? 'active' : '' }}">
+                            <i class="bi bi-bag"></i> Compras
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.expenses') }}" class="{{ request()->routeIs('reports.expenses') ? 'active' : '' }}">
+                            <i class="bi bi-cash-stack"></i> Gastos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.inventory') }}" class="{{ request()->routeIs('reports.inventory') ? 'active' : '' }}">
+                            <i class="bi bi-box-seam"></i> Inventario
+                        </a>
+                    </li>
+                </ul>
             </li>
             <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -231,7 +280,7 @@
                 </a>
             </li>
             <li>
-                <a href="#" class="">
+                <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
                     <i class="bi bi-gear"></i> Configuraci&oacute;n
                 </a>
             </li>

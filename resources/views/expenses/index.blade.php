@@ -1,24 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Compras')
-@section('page-title', 'Compras')
+@section('title', 'Gastos')
+@section('page-title', 'Gastos')
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" onclick="newPurchase()">Nueva Compra</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-search" onclick="viewPurchase()">Ver Detalle</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="confirmPurchase()">Confirmar</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="cancelPurchase()">Anular</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" onclick="deletePurchase()">Eliminar</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" onclick="newExpense()">Nuevo Gasto</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" onclick="editExpense()">Editar</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="payExpense()">Marcar Pagado</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="cancelExpense()">Anular</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" onclick="deleteExpense()">Eliminar</a>
     <span style="margin-left: 20px;">
         <input id="searchbox" class="easyui-searchbox" style="width: 250px"
-               data-options="prompt:'Buscar por número o proveedor...',searcher:doSearch">
+               data-options="prompt:'Buscar gasto...',searcher:doSearch">
     </span>
 </div>
 
 <table id="dg" class="easyui-datagrid" style="width:100%;height:700px;"
        data-options="
-           url: '{{ route('purchases.data') }}',
+           url: '{{ route('expenses.data') }}',
            method: 'get',
            toolbar: '#toolbar',
            pagination: true,
@@ -33,16 +33,14 @@
        ">
     <thead>
         <tr>
-            <th data-options="field:'purchase_number',width:120,sortable:true">Número</th>
-            <th data-options="field:'invoice_number',width:120,sortable:true">Fact. Proveedor</th>
-            <th data-options="field:'purchase_date',width:100,sortable:true">Fecha</th>
-            <th data-options="field:'supplier_name',width:200">Proveedor</th>
-            <th data-options="field:'subtotal_exento',width:100,align:'right'">Exento</th>
-            <th data-options="field:'subtotal_5',width:100,align:'right'">Grav. 5%</th>
-            <th data-options="field:'iva_5',width:80,align:'right'">IVA 5%</th>
-            <th data-options="field:'subtotal_10',width:100,align:'right'">Grav. 10%</th>
-            <th data-options="field:'iva_10',width:80,align:'right'">IVA 10%</th>
-            <th data-options="field:'total',width:120,align:'right',styler:function(){return 'font-weight:bold;'}">Total</th>
+            <th data-options="field:'expense_number',width:100,sortable:true">Número</th>
+            <th data-options="field:'expense_date',width:100,sortable:true">Fecha</th>
+            <th data-options="field:'category_name',width:150">Categoría</th>
+            <th data-options="field:'description',width:250">Descripción</th>
+            <th data-options="field:'supplier_name',width:150">Proveedor</th>
+            <th data-options="field:'document_number',width:100">Documento</th>
+            <th data-options="field:'amount',width:120,align:'right',styler:function(){return 'font-weight:bold;'}">Monto</th>
+            <th data-options="field:'tax_rate',width:60,align:'center',formatter:formatTaxRate">IVA</th>
             <th data-options="field:'status',width:100,align:'center',formatter:formatStatus">Estado</th>
             <th data-options="field:'payment_method',width:100">Pago</th>
             <th data-options="field:'user_name',width:120">Usuario</th>
@@ -53,44 +51,52 @@
 <script>
 function formatStatus(value, row) {
     switch(value) {
-        case 'draft':
-            return '<span class="badge bg-secondary">Borrador</span>';
-        case 'confirmed':
-            return '<span class="badge bg-success">Confirmada</span>';
+        case 'pending':
+            return '<span class="badge bg-warning">Pendiente</span>';
+        case 'paid':
+            return '<span class="badge bg-success">Pagado</span>';
         case 'cancelled':
-            return '<span class="badge bg-danger">Anulada</span>';
+            return '<span class="badge bg-danger">Anulado</span>';
         default:
             return value;
     }
 }
 
-function newPurchase() {
-    window.location.href = '{{ route('purchases.create') }}';
+function formatTaxRate(value) {
+    return value + '%';
 }
 
-function viewPurchase() {
+function newExpense() {
+    window.location.href = '{{ route('expenses.create') }}';
+}
+
+function editExpense() {
     var row = $('#dg').datagrid('getSelected');
     if (row) {
-        window.location.href = '{{ url('purchases') }}/' + row.id + '/detail';
+        if (row.status === 'paid') {
+            $.messager.alert('Información', 'No se pueden editar gastos pagados', 'warning');
+            return;
+        }
+        window.location.href = '{{ url('expenses') }}/' + row.id + '/edit';
     } else {
-        $.messager.alert('Información', 'Seleccione una compra', 'info');
+        $.messager.alert('Información', 'Seleccione un gasto', 'info');
     }
 }
 
-function confirmPurchase() {
+function payExpense() {
     var row = $('#dg').datagrid('getSelected');
     if (!row) {
-        $.messager.alert('Información', 'Seleccione una compra', 'info');
+        $.messager.alert('Información', 'Seleccione un gasto', 'info');
         return;
     }
-    if (row.status !== 'draft') {
-        $.messager.alert('Información', 'Solo se pueden confirmar compras en borrador', 'warning');
+    if (row.status !== 'pending') {
+        $.messager.alert('Información', 'Solo se pueden pagar gastos pendientes', 'warning');
         return;
     }
-    $.messager.confirm('Confirmar', '¿Desea confirmar esta compra? Se incrementará el stock.', function(r) {
+    $.messager.confirm('Confirmar', '¿Desea marcar este gasto como pagado?', function(r) {
         if (r) {
             $.ajax({
-                url: '{{ url('purchases') }}/' + row.id + '/confirm',
+                url: '{{ url('expenses') }}/' + row.id + '/pay',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -117,20 +123,20 @@ function confirmPurchase() {
     });
 }
 
-function cancelPurchase() {
+function cancelExpense() {
     var row = $('#dg').datagrid('getSelected');
     if (!row) {
-        $.messager.alert('Información', 'Seleccione una compra', 'info');
+        $.messager.alert('Información', 'Seleccione un gasto', 'info');
         return;
     }
     if (row.status === 'cancelled') {
-        $.messager.alert('Información', 'La compra ya está anulada', 'warning');
+        $.messager.alert('Información', 'El gasto ya está anulado', 'warning');
         return;
     }
-    $.messager.confirm('Anular', '¿Desea anular esta compra? Se revertirá el stock si estaba confirmada.', function(r) {
+    $.messager.confirm('Anular', '¿Desea anular este gasto?', function(r) {
         if (r) {
             $.ajax({
-                url: '{{ url('purchases') }}/' + row.id + '/cancel',
+                url: '{{ url('expenses') }}/' + row.id + '/cancel',
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -157,20 +163,20 @@ function cancelPurchase() {
     });
 }
 
-function deletePurchase() {
+function deleteExpense() {
     var row = $('#dg').datagrid('getSelected');
     if (!row) {
-        $.messager.alert('Información', 'Seleccione una compra', 'info');
+        $.messager.alert('Información', 'Seleccione un gasto', 'info');
         return;
     }
-    if (row.status !== 'draft') {
-        $.messager.alert('Información', 'Solo se pueden eliminar compras en borrador', 'warning');
+    if (row.status === 'paid') {
+        $.messager.alert('Información', 'No se pueden eliminar gastos pagados', 'warning');
         return;
     }
-    $.messager.confirm('Eliminar', '¿Desea eliminar esta compra?', function(r) {
+    $.messager.confirm('Eliminar', '¿Desea eliminar este gasto?', function(r) {
         if (r) {
             $.ajax({
-                url: '{{ url('purchases') }}/' + row.id,
+                url: '{{ url('expenses') }}/' + row.id,
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

@@ -9,6 +9,11 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -105,4 +110,47 @@ Route::middleware('auth')->group(function () {
     Route::post('/purchases/{purchase}/confirm', [PurchaseController::class, 'confirm'])->name('purchases.confirm');
     Route::post('/purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
     Route::delete('/purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
+
+    // Categorías de Gastos
+    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+    Route::get('/expense-categories/data', [ExpenseCategoryController::class, 'data'])->name('expense-categories.data');
+    Route::get('/expense-categories/list', [ExpenseCategoryController::class, 'list'])->name('expense-categories.list');
+    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+    Route::get('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'show'])->name('expense-categories.show');
+    Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
+
+    // Gastos
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('/expenses/data', [ExpenseController::class, 'data'])->name('expenses.data');
+    Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
+    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
+    Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+    Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::post('/expenses/{expense}/pay', [ExpenseController::class, 'pay'])->name('expenses.pay');
+    Route::post('/expenses/{expense}/cancel', [ExpenseController::class, 'cancel'])->name('expenses.cancel');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+    // Reportes
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+    Route::get('/reports/purchases', [ReportController::class, 'purchases'])->name('reports.purchases');
+    Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
+    Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
+    Route::get('/reports/summary', [ReportController::class, 'summary'])->name('reports.summary');
+
+    // Configuración
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // Ajustes de Inventario
+    Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
+    Route::get('/inventory-adjustments/data', [InventoryAdjustmentController::class, 'data'])->name('inventory-adjustments.data');
+    Route::get('/inventory-adjustments/create', [InventoryAdjustmentController::class, 'create'])->name('inventory-adjustments.create');
+    Route::post('/inventory-adjustments', [InventoryAdjustmentController::class, 'store'])->name('inventory-adjustments.store');
+    Route::get('/inventory-adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'show'])->name('inventory-adjustments.show');
+    Route::post('/inventory-adjustments/{inventoryAdjustment}/confirm', [InventoryAdjustmentController::class, 'confirm'])->name('inventory-adjustments.confirm');
+    Route::post('/inventory-adjustments/{inventoryAdjustment}/cancel', [InventoryAdjustmentController::class, 'cancel'])->name('inventory-adjustments.cancel');
+    Route::delete('/inventory-adjustments/{inventoryAdjustment}', [InventoryAdjustmentController::class, 'destroy'])->name('inventory-adjustments.destroy');
 });
