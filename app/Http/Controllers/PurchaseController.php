@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\AccountPayable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -75,6 +77,8 @@ class PurchaseController extends Controller
         $validator = Validator::make($request->all(), [
             'supplier_id' => 'required|exists:suppliers,id',
             'purchase_date' => 'required|date',
+            'payment_type' => 'required|in:cash,credit',
+            'credit_days' => 'required_if:payment_type,credit|nullable|integer|min:1',
             'invoice_number' => 'nullable|string|max:50',
             'payment_method' => 'required|string',
             'notes' => 'nullable|string',
@@ -91,6 +95,12 @@ class PurchaseController extends Controller
         try {
             DB::beginTransaction();
 
+            // Calcular fecha de vencimiento si es a crédito
+            $creditDueDate = null;
+            if ($request->payment_type === 'credit') {
+                $creditDueDate = date('Y-m-d', strtotime($request->purchase_date . ' + ' . $request->credit_days . ' days'));
+            }
+
             $purchase = Purchase::create([
                 'tenant_id' => auth()->user()->tenant_id,
                 'purchase_number' => Purchase::generatePurchaseNumber(auth()->user()->tenant_id),
@@ -98,6 +108,9 @@ class PurchaseController extends Controller
                 'supplier_id' => $request->supplier_id,
                 'user_id' => auth()->id(),
                 'invoice_number' => $request->invoice_number,
+                'payment_type' => $request->payment_type,
+                'credit_days' => $request->credit_days,
+                'credit_due_date' => $creditDueDate,
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
                 'status' => 'draft',
@@ -145,7 +158,7 @@ class PurchaseController extends Controller
 
     public function detail(Purchase $purchase)
     {
-        $purchase->load(['supplier', 'user', 'items.product']);
+        $purchase->load(['supplier', 'user', 'items.product', 'accountPayable']);
         return view('purchases.detail', compact('purchase'));
     }
 
@@ -169,6 +182,27 @@ class PurchaseController extends Controller
 
             $purchase->status = 'confirmed';
             $purchase->save();
+
+            // Si es compra a crédito, crear cuenta por pagar
+            if ($purchase->payment_type === 'credit' && $purchase->supplier_id) {
+                $supplier = Supplier::find($purchase->supplier_id);
+
+                AccountPayable::create([
+                    'tenant_id' => $purchase->tenant_id,
+                    'document_number' => AccountPayable::generateDocumentNumber($purchase->tenant_id),
+                    'document_date' => $purchase->purchase_date,
+                    'due_date' => $purchase->credit_due_date,
+                    'supplier_id' => $purchase->supplier_id,
+                    'supplier_name' => $supplier->name,
+                    'purchase_id' => $purchase->id,
+                    'purchase_number' => $purchase->purchase_number,
+                    'description' => 'Compra a crédito - ' . $purchase->purchase_number,
+                    'amount' => $purchase->total,
+                    'paid_amount' => 0,
+                    'balance' => $purchase->total,
+                    'status' => 'pending',
+                ]);
+            }
 
             DB::commit();
 

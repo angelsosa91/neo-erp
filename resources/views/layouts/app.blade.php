@@ -275,6 +275,16 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('account-payables.index') }}" class="{{ request()->routeIs('account-payables.*') ? 'active' : '' }}">
+                    <i class="bi bi-credit-card"></i> Cuentas por Pagar
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('cash-registers.current') }}" class="{{ request()->routeIs('cash-registers.*') ? 'active' : '' }}">
+                    <i class="bi bi-cash-coin"></i> Caja
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Usuarios
                 </a>

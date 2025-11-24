@@ -35,12 +35,12 @@
                 {{ $purchase->supplier->name ?? 'Sin proveedor' }}
             </div>
             <div class="col-md-2">
-                <strong>Fact. Proveedor:</strong><br>
-                {{ $purchase->invoice_number ?? '-' }}
-            </div>
-            <div class="col-md-2">
-                <strong>Forma de Pago:</strong><br>
-                {{ $purchase->payment_method }}
+                <strong>Tipo de Compra:</strong><br>
+                @if($purchase->payment_type === 'credit')
+                    <span class="badge bg-warning">Crédito</span>
+                @else
+                    <span class="badge bg-success">Contado</span>
+                @endif
             </div>
             <div class="col-md-2">
                 <strong>Estado:</strong><br>
@@ -56,7 +56,44 @@
                         @break
                 @endswitch
             </div>
+            <div class="col-md-2">
+                @if($purchase->payment_type === 'credit' && $purchase->credit_due_date)
+                    <strong>Vencimiento:</strong><br>
+                    {{ $purchase->credit_due_date->format('d/m/Y') }}
+                    <small>({{ $purchase->credit_days }} días)</small>
+                @endif
+            </div>
         </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <strong>Fact. Proveedor:</strong><br>
+                {{ $purchase->invoice_number ?? '-' }}
+            </div>
+            <div class="col-md-4">
+                <strong>Forma de Pago:</strong><br>
+                {{ $purchase->payment_method }}
+            </div>
+        </div>
+
+        @if($purchase->payment_type === 'credit' && $purchase->accountPayable)
+        <div class="alert alert-info mb-4">
+            <i class="bi bi-credit-card"></i>
+            <strong>Cuenta por Pagar:</strong>
+            <a href="{{ route('account-payables.show', $purchase->accountPayable->id) }}" class="alert-link">
+                {{ $purchase->accountPayable->document_number }}
+            </a>
+            - Saldo: <strong>{{ number_format($purchase->accountPayable->balance, 0, ',', '.') }} Gs.</strong>
+            - Estado:
+            @if($purchase->accountPayable->status === 'pending')
+                <span class="badge bg-warning">Pendiente</span>
+            @elseif($purchase->accountPayable->status === 'partial')
+                <span class="badge bg-info">Parcial</span>
+            @elseif($purchase->accountPayable->status === 'paid')
+                <span class="badge bg-success">Pagado</span>
+            @endif
+        </div>
+        @endif
 
         <!-- Items de la compra -->
         <table class="table table-striped">

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan make:migration:*)"
+      "Bash(php artisan make:migration:*)",
+      "Bash(c:/xampp/php/php.exe artisan migrate:*)",
+      "Bash(c:xamppphpphp.exe artisan migrate)",
+      "Bash(php artisan migrate:*)"
     ],
     "deny": [],
     "ask": []

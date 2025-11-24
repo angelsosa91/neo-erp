@@ -21,7 +21,7 @@
             @csrf
             <div class="row mb-3">
                 <div class="col-md-3">
-                    <label class="form-label">Fecha</label>
+                    <label class="form-label">Fecha <span class="text-danger">*</span></label>
                     <input type="date" class="form-control" id="purchase_date" name="purchase_date"
                            value="{{ date('Y-m-d') }}" required>
                 </div>
@@ -29,20 +29,31 @@
                     <label class="form-label">Proveedor <span class="text-danger">*</span></label>
                     <input id="supplier_id" name="supplier_id" style="width: 100%;">
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Nro. Factura Proveedor</label>
-                    <input type="text" class="form-control" id="invoice_number" name="invoice_number">
+                <div class="col-md-2">
+                    <label class="form-label">Tipo de Compra <span class="text-danger">*</span></label>
+                    <select class="form-select" id="payment_type" name="payment_type" onchange="toggleCreditFields()">
+                        <option value="cash">Contado</option>
+                        <option value="credit">Crédito</option>
+                    </select>
+                </div>
+                <div class="col-md-2" id="credit_days_field" style="display:none;">
+                    <label class="form-label">Días de Crédito <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="credit_days" name="credit_days" min="1" value="30">
                 </div>
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nro. Factura Proveedor</label>
+                    <input type="text" class="form-control" id="invoice_number" name="invoice_number">
+                </div>
+                <div class="col-md-6">
                     <label class="form-label">Forma de Pago</label>
                     <select class="form-select" id="payment_method" name="payment_method">
-                        <option value="Contado">Contado</option>
-                        <option value="Crédito">Crédito</option>
+                        <option value="Efectivo">Efectivo</option>
                         <option value="Transferencia">Transferencia</option>
                         <option value="Cheque">Cheque</option>
+                        <option value="Tarjeta">Tarjeta</option>
                     </select>
                 </div>
             </div>
@@ -213,6 +224,15 @@ $(function() {
     });
 });
 
+function toggleCreditFields() {
+    var paymentType = $('#payment_type').val();
+    if (paymentType === 'credit') {
+        $('#credit_days_field').show();
+    } else {
+        $('#credit_days_field').hide();
+    }
+}
+
 function addItem() {
     if (!selectedProduct) {
         $.messager.alert('Información', 'Seleccione un producto', 'info');
@@ -346,6 +366,8 @@ function savePurchase() {
     var data = {
         supplier_id: supplierId,
         purchase_date: $('#purchase_date').val(),
+        payment_type: $('#payment_type').val(),
+        credit_days: $('#credit_days').val(),
         invoice_number: $('#invoice_number').val(),
         payment_method: $('#payment_method').val(),
         notes: $('#notes').val(),

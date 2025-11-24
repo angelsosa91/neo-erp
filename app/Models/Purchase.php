@@ -25,11 +25,15 @@ class Purchase extends Model
         'total',
         'status',
         'payment_method',
+        'payment_type',
+        'credit_days',
+        'credit_due_date',
         'notes',
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
+        'credit_due_date' => 'date',
         'subtotal_exento' => 'decimal:2',
         'subtotal_5' => 'decimal:2',
         'iva_5' => 'decimal:2',
@@ -51,6 +55,11 @@ class Purchase extends Model
     public function items()
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function accountPayable()
+    {
+        return $this->hasOne(AccountPayable::class);
     }
 
     /**

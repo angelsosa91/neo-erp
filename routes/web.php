@@ -15,6 +15,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\AccountReceivableController;
+use App\Http\Controllers\AccountPayableController;
+use App\Http\Controllers\CashRegisterController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 
@@ -165,4 +167,24 @@ Route::middleware('auth')->group(function () {
     Route::post('/account-receivables/{accountReceivable}/add-payment', [AccountReceivableController::class, 'addPayment'])->name('account-receivables.add-payment');
     Route::post('/account-receivables/{accountReceivable}/cancel', [AccountReceivableController::class, 'cancel'])->name('account-receivables.cancel');
     Route::delete('/account-receivables/{accountReceivable}', [AccountReceivableController::class, 'destroy'])->name('account-receivables.destroy');
+
+    // Cuentas por Pagar
+    Route::get('/account-payables', [AccountPayableController::class, 'index'])->name('account-payables.index');
+    Route::get('/account-payables/data', [AccountPayableController::class, 'data'])->name('account-payables.data');
+    Route::get('/account-payables/by-supplier', [AccountPayableController::class, 'bySupplier'])->name('account-payables.by-supplier');
+    Route::get('/account-payables/create', [AccountPayableController::class, 'create'])->name('account-payables.create');
+    Route::post('/account-payables', [AccountPayableController::class, 'store'])->name('account-payables.store');
+    Route::get('/account-payables/{accountPayable}', [AccountPayableController::class, 'show'])->name('account-payables.show');
+    Route::post('/account-payables/{accountPayable}/add-payment', [AccountPayableController::class, 'addPayment'])->name('account-payables.add-payment');
+    Route::post('/account-payables/{accountPayable}/cancel', [AccountPayableController::class, 'cancel'])->name('account-payables.cancel');
+    Route::delete('/account-payables/{accountPayable}', [AccountPayableController::class, 'destroy'])->name('account-payables.destroy');
+
+    // Caja
+    Route::get('/cash-registers', [CashRegisterController::class, 'index'])->name('cash-registers.index');
+    Route::get('/cash-registers/data', [CashRegisterController::class, 'data'])->name('cash-registers.data');
+    Route::get('/cash-registers/current', [CashRegisterController::class, 'current'])->name('cash-registers.current');
+    Route::post('/cash-registers/open', [CashRegisterController::class, 'open'])->name('cash-registers.open');
+    Route::get('/cash-registers/{cashRegister}', [CashRegisterController::class, 'show'])->name('cash-registers.show');
+    Route::post('/cash-registers/{cashRegister}/add-movement', [CashRegisterController::class, 'addMovement'])->name('cash-registers.add-movement');
+    Route::post('/cash-registers/{cashRegister}/close', [CashRegisterController::class, 'close'])->name('cash-registers.close');
 });
