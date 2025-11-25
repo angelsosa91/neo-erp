@@ -34,6 +34,7 @@ return new class extends Migration
             $table->index('tenant_id');
             $table->index('register_date');
             $table->index('status');
+            $table->index(['user_id', 'register_date', 'status']);
         });
 
         Schema::create('cash_register_movements', function (Blueprint $table) {

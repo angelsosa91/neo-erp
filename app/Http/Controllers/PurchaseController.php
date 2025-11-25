@@ -7,7 +7,9 @@ use App\Models\PurchaseItem;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\AccountPayable;
+use App\Models\CashRegister;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -173,6 +175,21 @@ class PurchaseController extends Controller
         try {
             DB::beginTransaction();
 
+            // Si es compra al contado en efectivo, verificar que haya caja abierta
+            if ($purchase->payment_type === 'cash' && $purchase->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                if (!$cashRegister) {
+                    throw new \Exception('Debes tener una caja abierta para confirmar compras en efectivo');
+                }
+
+                // Validar que haya saldo suficiente en caja
+                $cashRegister->calculateExpectedBalance();
+                if ($cashRegister->expected_balance < $purchase->total) {
+                    throw new \Exception('Saldo insuficiente en caja. Disponible: ' . number_format($cashRegister->expected_balance, 0, ',', '.') . ' Gs.');
+                }
+            }
+
             // Incrementar stock de productos (compra = entrada de stock)
             foreach ($purchase->items as $item) {
                 $product = $item->product;
@@ -202,6 +219,26 @@ class PurchaseController extends Controller
                     'balance' => $purchase->total,
                     'status' => 'pending',
                 ]);
+            }
+
+            // Si es compra al contado en efectivo, registrar en caja
+            if ($purchase->payment_type === 'cash' && $purchase->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                // Registrar movimiento en caja
+                $cashRegister->movements()->create([
+                    'type' => 'expense',
+                    'concept' => 'payment',
+                    'amount' => $purchase->total,
+                    'description' => 'Compra ' . $purchase->purchase_number . ' - ' . $purchase->supplier->name,
+                    'reference' => $purchase->purchase_number,
+                    'purchase_id' => $purchase->id,
+                ]);
+
+                // Actualizar totales de caja
+                $cashRegister->payments += $purchase->total;
+                $cashRegister->calculateExpectedBalance();
+                $cashRegister->save();
             }
 
             DB::commit();
@@ -236,6 +273,33 @@ class PurchaseController extends Controller
                     $product = $item->product;
                     $product->stock -= $item->quantity;
                     $product->save();
+                }
+
+                // Si fue compra en efectivo, reversar el movimiento de caja
+                if ($purchase->payment_type === 'cash' && $purchase->payment_method === 'cash') {
+                    // Buscar la caja del usuario para la fecha de la compra
+                    $cashRegister = CashRegister::getUserRegisterForDate(
+                        Auth::user()->tenant_id,
+                        Auth::id(),
+                        $purchase->purchase_date->format('Y-m-d')
+                    );
+
+                    if ($cashRegister && $cashRegister->status === 'open') {
+                        // Registrar movimiento de reversa en caja
+                        $cashRegister->movements()->create([
+                            'type' => 'income',
+                            'concept' => 'other',
+                            'amount' => $purchase->total,
+                            'description' => 'Anulación de compra ' . $purchase->purchase_number,
+                            'reference' => $purchase->purchase_number,
+                            'purchase_id' => $purchase->id,
+                        ]);
+
+                        // Actualizar totales de caja (devolver el pago)
+                        $cashRegister->payments -= $purchase->total;
+                        $cashRegister->calculateExpectedBalance();
+                        $cashRegister->save();
+                    }
                 }
             }
 

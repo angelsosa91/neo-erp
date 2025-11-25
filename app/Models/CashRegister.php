@@ -86,11 +86,20 @@ class CashRegister extends Model
         return 'CJ-' . str_pad($number, 7, '0', STR_PAD_LEFT);
     }
 
-    public static function getOpenRegister($tenantId)
+    public static function getOpenRegister($tenantId, $userId)
     {
         return self::where('tenant_id', $tenantId)
+            ->where('user_id', $userId)
             ->where('status', 'open')
             ->where('register_date', date('Y-m-d'))
+            ->first();
+    }
+
+    public static function getUserRegisterForDate($tenantId, $userId, $date)
+    {
+        return self::where('tenant_id', $tenantId)
+            ->where('user_id', $userId)
+            ->where('register_date', $date)
             ->first();
     }
 }

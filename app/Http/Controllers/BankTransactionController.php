@@ -235,6 +235,14 @@ class BankTransactionController extends Controller
             $cashRegister = CashRegister::findOrFail($request->cash_register_id);
             $bankAccount = BankAccount::findOrFail($request->bank_account_id);
 
+            // Validar que la caja pertenezca al usuario
+            if ($cashRegister->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para usar esta caja'
+                ], 403);
+            }
+
             // Validar que la caja esté abierta
             if ($cashRegister->status !== 'open') {
                 return response()->json([
@@ -313,6 +321,14 @@ class BankTransactionController extends Controller
         try {
             $cashRegister = CashRegister::findOrFail($request->cash_register_id);
             $bankAccount = BankAccount::findOrFail($request->bank_account_id);
+
+            // Validar que la caja pertenezca al usuario
+            if ($cashRegister->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para usar esta caja'
+                ], 403);
+            }
 
             // Validar que la caja esté abierta
             if ($cashRegister->status !== 'open') {

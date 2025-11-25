@@ -17,7 +17,8 @@ class CashRegisterController extends Controller
 
     public function data(Request $request)
     {
-        $query = CashRegister::with('user');
+        $query = CashRegister::with('user')
+            ->where('user_id', Auth::id());
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
@@ -62,7 +63,7 @@ class CashRegisterController extends Controller
 
     public function current()
     {
-        $register = CashRegister::getOpenRegister(Auth::user()->tenant_id);
+        $register = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
 
         if (!$register) {
             return view('cash-registers.open');
@@ -81,12 +82,12 @@ class CashRegisterController extends Controller
             'opening_balance' => 'required|numeric|min:0',
         ]);
 
-        // Verificar que no haya una caja abierta
-        $existingRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id);
+        // Verificar que no haya una caja abierta para este usuario
+        $existingRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
         if ($existingRegister) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ya existe una caja abierta para hoy'
+                'message' => 'Ya tienes una caja abierta para hoy'
             ], 400);
         }
 
@@ -119,6 +120,14 @@ class CashRegisterController extends Controller
         ]);
 
         $register = CashRegister::findOrFail($id);
+
+        // Verificar que el usuario sea el dueño de la caja
+        if ($register->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para modificar esta caja'
+            ], 403);
+        }
 
         if ($register->status !== 'open') {
             return response()->json([
@@ -180,6 +189,14 @@ class CashRegisterController extends Controller
 
         $register = CashRegister::findOrFail($id);
 
+        // Verificar que el usuario sea el dueño de la caja
+        if ($register->user_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para cerrar esta caja'
+            ], 403);
+        }
+
         if ($register->status !== 'open') {
             return response()->json([
                 'success' => false,
@@ -203,7 +220,9 @@ class CashRegisterController extends Controller
     {
         $register = CashRegister::with(['user', 'movements' => function($query) {
             $query->orderBy('created_at', 'desc');
-        }])->findOrFail($id);
+        }])
+        ->where('user_id', Auth::id())
+        ->findOrFail($id);
 
         return view('cash-registers.detail', compact('register'));
     }

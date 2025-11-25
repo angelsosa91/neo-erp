@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountPayable;
 use App\Models\AccountPayablePayment;
+use App\Models\CashRegister;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -128,6 +129,21 @@ class AccountPayableController extends Controller
 
         DB::beginTransaction();
         try {
+            // Si el pago es en efectivo, verificar que haya caja abierta y saldo suficiente
+            if ($request->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                if (!$cashRegister) {
+                    throw new \Exception('Debes tener una caja abierta para registrar pagos en efectivo');
+                }
+
+                // Validar que haya saldo suficiente en caja
+                $cashRegister->calculateExpectedBalance();
+                if ($cashRegister->expected_balance < $request->amount) {
+                    throw new \Exception('Saldo insuficiente en caja. Disponible: ' . number_format($cashRegister->expected_balance, 0, ',', '.') . ' Gs.');
+                }
+            }
+
             $payment = AccountPayablePayment::create([
                 'account_payable_id' => $payable->id,
                 'payment_number' => AccountPayablePayment::generatePaymentNumber($payable->id),
@@ -140,6 +156,26 @@ class AccountPayableController extends Controller
             ]);
 
             $payable->updateBalance();
+
+            // Si el pago es en efectivo, registrar en caja
+            if ($request->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                // Registrar movimiento en caja
+                $cashRegister->movements()->create([
+                    'type' => 'expense',
+                    'concept' => 'payment',
+                    'amount' => $request->amount,
+                    'description' => 'Pago ' . $payment->payment_number . ' - ' . $payable->supplier_name . ' - ' . $payable->document_number,
+                    'reference' => $payment->payment_number,
+                    'account_payable_payment_id' => $payment->id,
+                ]);
+
+                // Actualizar totales de caja
+                $cashRegister->payments += $request->amount;
+                $cashRegister->calculateExpectedBalance();
+                $cashRegister->save();
+            }
 
             DB::commit();
 

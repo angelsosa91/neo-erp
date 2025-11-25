@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Arqueos de Caja')
+@section('title', 'Mi Historial de Cajas')
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">
-    <a href="{{ route('cash-registers.current') }}" class="easyui-linkbutton" iconCls="icon-add">Caja del Día</a>
+    <a href="{{ route('cash-registers.current') }}" class="easyui-linkbutton" iconCls="icon-add">Mi Caja del Día</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-tip" onclick="viewDetail()">Ver Detalle</a>
     <span style="margin-left: 20px;">
         <select id="status_filter" class="easyui-combobox" style="width: 150px;" data-options="

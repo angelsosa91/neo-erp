@@ -7,7 +7,9 @@ use App\Models\SaleItem;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\AccountReceivable;
+use App\Models\CashRegister;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -211,6 +213,15 @@ class SaleController extends Controller
         try {
             DB::beginTransaction();
 
+            // Si es venta al contado en efectivo, verificar que haya caja abierta
+            if ($sale->payment_type === 'cash' && $sale->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                if (!$cashRegister) {
+                    throw new \Exception('Debes tener una caja abierta para confirmar ventas en efectivo');
+                }
+            }
+
             // Verificar stock disponible
             foreach ($sale->items as $item) {
                 if ($item->product && $item->product->track_stock) {
@@ -251,6 +262,26 @@ class SaleController extends Controller
                 ]);
             }
 
+            // Si es venta al contado en efectivo, registrar en caja
+            if ($sale->payment_type === 'cash' && $sale->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                // Registrar movimiento en caja
+                $cashRegister->movements()->create([
+                    'type' => 'income',
+                    'concept' => 'sale',
+                    'amount' => $sale->total,
+                    'description' => 'Venta ' . $sale->sale_number . ($sale->customer_id ? ' - ' . $sale->customer->name : ''),
+                    'reference' => $sale->sale_number,
+                    'sale_id' => $sale->id,
+                ]);
+
+                // Actualizar totales de caja
+                $cashRegister->sales_cash += $sale->total;
+                $cashRegister->calculateExpectedBalance();
+                $cashRegister->save();
+            }
+
             DB::commit();
 
             return response()->json([
@@ -285,6 +316,33 @@ class SaleController extends Controller
                 foreach ($sale->items as $item) {
                     if ($item->product && $item->product->track_stock) {
                         $item->product->increment('stock', $item->quantity);
+                    }
+                }
+
+                // Si fue venta en efectivo, reversar el movimiento de caja
+                if ($sale->payment_type === 'cash' && $sale->payment_method === 'cash') {
+                    // Buscar la caja del usuario para la fecha de la venta
+                    $cashRegister = CashRegister::getUserRegisterForDate(
+                        Auth::user()->tenant_id,
+                        Auth::id(),
+                        $sale->sale_date->format('Y-m-d')
+                    );
+
+                    if ($cashRegister && $cashRegister->status === 'open') {
+                        // Registrar movimiento de reversa en caja
+                        $cashRegister->movements()->create([
+                            'type' => 'expense',
+                            'concept' => 'other',
+                            'amount' => $sale->total,
+                            'description' => 'Anulación de venta ' . $sale->sale_number,
+                            'reference' => $sale->sale_number,
+                            'sale_id' => $sale->id,
+                        ]);
+
+                        // Actualizar totales de caja (restar de ventas en efectivo)
+                        $cashRegister->sales_cash -= $sale->total;
+                        $cashRegister->calculateExpectedBalance();
+                        $cashRegister->save();
                     }
                 }
             }

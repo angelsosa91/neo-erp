@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountReceivable;
 use App\Models\AccountReceivablePayment;
+use App\Models\CashRegister;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -128,6 +129,15 @@ class AccountReceivableController extends Controller
 
         DB::beginTransaction();
         try {
+            // Si el pago es en efectivo, verificar que haya caja abierta
+            if ($request->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                if (!$cashRegister) {
+                    throw new \Exception('Debes tener una caja abierta para registrar cobros en efectivo');
+                }
+            }
+
             $payment = AccountReceivablePayment::create([
                 'account_receivable_id' => $receivable->id,
                 'payment_number' => AccountReceivablePayment::generatePaymentNumber($receivable->id),
@@ -140,6 +150,26 @@ class AccountReceivableController extends Controller
             ]);
 
             $receivable->updateBalance();
+
+            // Si el pago es en efectivo, registrar en caja
+            if ($request->payment_method === 'cash') {
+                $cashRegister = CashRegister::getOpenRegister(Auth::user()->tenant_id, Auth::id());
+
+                // Registrar movimiento en caja
+                $cashRegister->movements()->create([
+                    'type' => 'income',
+                    'concept' => 'collection',
+                    'amount' => $request->amount,
+                    'description' => 'Cobro ' . $payment->payment_number . ' - ' . $receivable->customer_name . ' - ' . $receivable->document_number,
+                    'reference' => $payment->payment_number,
+                    'account_receivable_payment_id' => $payment->id,
+                ]);
+
+                // Actualizar totales de caja
+                $cashRegister->collections += $request->amount;
+                $cashRegister->calculateExpectedBalance();
+                $cashRegister->save();
+            }
 
             DB::commit();
 
