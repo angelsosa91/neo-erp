@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Ajustes de Inventario')
+@section('page-title', 'Ajustes de Inventario')
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">

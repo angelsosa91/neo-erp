@@ -19,6 +19,7 @@ use App\Http\Controllers\AccountPayableController;
 use App\Http\Controllers\CashRegisterController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankTransactionController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\CheckController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
@@ -191,6 +192,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/cash-registers/{cashRegister}/add-movement', [CashRegisterController::class, 'addMovement'])->name('cash-registers.add-movement');
     Route::post('/cash-registers/{cashRegister}/close', [CashRegisterController::class, 'close'])->name('cash-registers.close');
 
+    // Bancos - Catálogo de Bancos
+    Route::get('/banks', [BankController::class, 'index'])->name('banks.index');
+    Route::get('/banks/list', [BankController::class, 'list'])->name('banks.list');
+    Route::get('/banks/active', [BankController::class, 'getActive'])->name('banks.active');
+    Route::post('/banks', [BankController::class, 'store'])->name('banks.store');
+    Route::get('/banks/{bank}', [BankController::class, 'show'])->name('banks.show');
+    Route::put('/banks/{bank}', [BankController::class, 'update'])->name('banks.update');
+    Route::delete('/banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
+
     // Bancos - Cuentas Bancarias
     Route::get('/bank-accounts', [BankAccountController::class, 'index'])->name('bank-accounts.index');
     Route::get('/bank-accounts/data', [BankAccountController::class, 'data'])->name('bank-accounts.data');
@@ -199,6 +209,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/bank-accounts/{bankAccount}', [BankAccountController::class, 'show'])->name('bank-accounts.show');
     Route::put('/bank-accounts/{bankAccount}', [BankAccountController::class, 'update'])->name('bank-accounts.update');
     Route::post('/bank-accounts/{bankAccount}/toggle-status', [BankAccountController::class, 'toggleStatus'])->name('bank-accounts.toggle-status');
+    Route::post('/bank-accounts/{bankAccount}/set-default', [BankAccountController::class, 'setDefault'])->name('bank-accounts.set-default');
     Route::get('/bank-accounts/{bankAccount}/reconciliation', [BankAccountController::class, 'reconciliation'])->name('bank-accounts.reconciliation');
     Route::post('/bank-accounts/{bankAccount}/reconcile', [BankAccountController::class, 'reconcile'])->name('bank-accounts.reconcile');
 

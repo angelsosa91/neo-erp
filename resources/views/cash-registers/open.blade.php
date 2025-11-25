@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Abrir Caja')
+@section('page-title', 'Abrir Caja')
 
 @section('content')
 <div class="card" style="max-width: 600px; margin: 50px auto;">

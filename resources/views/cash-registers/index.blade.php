@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Mi Historial de Cajas')
+@section('page-title', 'Mi Historial de Cajas')
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">

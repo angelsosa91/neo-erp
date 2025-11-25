@@ -6,6 +6,8 @@ use App\Models\AccountPayable;
 use App\Models\AccountPayablePayment;
 use App\Models\CashRegister;
 use App\Models\Supplier;
+use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -175,6 +177,38 @@ class AccountPayableController extends Controller
                 $cashRegister->payments += $request->amount;
                 $cashRegister->calculateExpectedBalance();
                 $cashRegister->save();
+            }
+
+            // Si el pago es por transferencia, registrar en cuenta bancaria predeterminada
+            if ($request->payment_method === 'transfer') {
+                $defaultAccount = BankAccount::getDefaultAccount(Auth::user()->tenant_id);
+
+                if (!$defaultAccount) {
+                    throw new \Exception('Debe configurar una cuenta bancaria predeterminada para registrar transferencias');
+                }
+
+                // Validar que haya saldo suficiente en la cuenta bancaria
+                $defaultAccount->updateBalance();
+                if ($defaultAccount->current_balance < $request->amount) {
+                    throw new \Exception('Saldo insuficiente en cuenta bancaria. Disponible: ' . number_format($defaultAccount->current_balance, 0, ',', '.') . ' Gs.');
+                }
+
+                // Crear transacción bancaria
+                BankTransaction::create([
+                    'tenant_id' => Auth::user()->tenant_id,
+                    'bank_account_id' => $defaultAccount->id,
+                    'transaction_number' => BankTransaction::generateTransactionNumber(Auth::user()->tenant_id),
+                    'transaction_date' => $request->payment_date,
+                    'type' => 'withdrawal',
+                    'amount' => $request->amount,
+                    'description' => 'Pago ' . $payment->payment_number . ' - ' . $payable->supplier_name . ' - ' . $payable->document_number,
+                    'reference' => $payment->payment_number,
+                    'status' => 'completed',
+                    'reconciled' => false,
+                ]);
+
+                // Actualizar saldo de cuenta bancaria
+                $defaultAccount->updateBalance();
             }
 
             DB::commit();

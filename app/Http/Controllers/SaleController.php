@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\AccountReceivable;
 use App\Models\CashRegister;
+use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -282,6 +284,32 @@ class SaleController extends Controller
                 $cashRegister->save();
             }
 
+            // Si es venta al contado por transferencia, registrar en cuenta bancaria predeterminada
+            if ($sale->payment_type === 'cash' && $sale->payment_method === 'transfer') {
+                $defaultAccount = BankAccount::getDefaultAccount(Auth::user()->tenant_id);
+
+                if (!$defaultAccount) {
+                    throw new \Exception('Debe configurar una cuenta bancaria predeterminada para registrar transferencias');
+                }
+
+                // Crear transacción bancaria
+                BankTransaction::create([
+                    'tenant_id' => Auth::user()->tenant_id,
+                    'bank_account_id' => $defaultAccount->id,
+                    'transaction_number' => BankTransaction::generateTransactionNumber(Auth::user()->tenant_id),
+                    'transaction_date' => $sale->sale_date,
+                    'type' => 'deposit',
+                    'amount' => $sale->total,
+                    'description' => 'Venta ' . $sale->sale_number . ($sale->customer_id ? ' - ' . $sale->customer->name : ''),
+                    'reference' => $sale->sale_number,
+                    'status' => 'completed',
+                    'reconciled' => false,
+                ]);
+
+                // Actualizar saldo de cuenta bancaria
+                $defaultAccount->updateBalance();
+            }
+
             DB::commit();
 
             return response()->json([
@@ -343,6 +371,24 @@ class SaleController extends Controller
                         $cashRegister->sales_cash -= $sale->total;
                         $cashRegister->calculateExpectedBalance();
                         $cashRegister->save();
+                    }
+                }
+
+                // Si fue venta por transferencia, cancelar la transacción bancaria
+                if ($sale->payment_type === 'cash' && $sale->payment_method === 'transfer') {
+                    // Buscar la transacción bancaria relacionada
+                    $bankTransaction = BankTransaction::where('tenant_id', Auth::user()->tenant_id)
+                        ->where('reference', $sale->sale_number)
+                        ->where('type', 'deposit')
+                        ->where('status', 'completed')
+                        ->first();
+
+                    if ($bankTransaction) {
+                        $bankTransaction->status = 'cancelled';
+                        $bankTransaction->save();
+
+                        // Actualizar saldo de cuenta bancaria
+                        $bankTransaction->bankAccount->updateBalance();
                     }
                 }
             }

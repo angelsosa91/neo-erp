@@ -6,6 +6,8 @@ use App\Models\AccountReceivable;
 use App\Models\AccountReceivablePayment;
 use App\Models\CashRegister;
 use App\Models\Customer;
+use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -169,6 +171,32 @@ class AccountReceivableController extends Controller
                 $cashRegister->collections += $request->amount;
                 $cashRegister->calculateExpectedBalance();
                 $cashRegister->save();
+            }
+
+            // Si el pago es por transferencia, registrar en cuenta bancaria predeterminada
+            if ($request->payment_method === 'transfer') {
+                $defaultAccount = BankAccount::getDefaultAccount(Auth::user()->tenant_id);
+
+                if (!$defaultAccount) {
+                    throw new \Exception('Debe configurar una cuenta bancaria predeterminada para registrar transferencias');
+                }
+
+                // Crear transacción bancaria
+                BankTransaction::create([
+                    'tenant_id' => Auth::user()->tenant_id,
+                    'bank_account_id' => $defaultAccount->id,
+                    'transaction_number' => BankTransaction::generateTransactionNumber(Auth::user()->tenant_id),
+                    'transaction_date' => $request->payment_date,
+                    'type' => 'deposit',
+                    'amount' => $request->amount,
+                    'description' => 'Cobro ' . $payment->payment_number . ' - ' . $receivable->customer_name . ' - ' . $receivable->document_number,
+                    'reference' => $payment->payment_number,
+                    'status' => 'completed',
+                    'reconciled' => false,
+                ]);
+
+                // Actualizar saldo de cuenta bancaria
+                $defaultAccount->updateBalance();
             }
 
             DB::commit();

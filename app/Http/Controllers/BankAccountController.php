@@ -17,13 +17,16 @@ class BankAccountController extends Controller
 
     public function data(Request $request)
     {
-        $query = BankAccount::query();
+        $query = BankAccount::with('bank');
 
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('account_number', 'like', '%' . $request->search . '%')
                   ->orWhere('account_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('bank_name', 'like', '%' . $request->search . '%');
+                  ->orWhere('bank_name', 'like', '%' . $request->search . '%')
+                  ->orWhereHas('bank', function($q) use ($request) {
+                      $q->where('name', 'like', '%' . $request->search . '%');
+                  });
             });
         }
 
@@ -67,13 +70,15 @@ class BankAccountController extends Controller
         $request->validate([
             'account_number' => 'required|string|max:50|unique:bank_accounts',
             'account_name' => 'required|string|max:100',
-            'bank_name' => 'required|string|max:100',
+            'bank_id' => 'nullable|exists:banks,id',
+            'bank_name' => 'required_without:bank_id|string|max:100',
             'account_type' => 'required|in:checking,savings,credit',
             'initial_balance' => 'required|numeric|min:0',
         ]);
 
         $account = BankAccount::create([
             'tenant_id' => Auth::user()->tenant_id,
+            'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
             'account_name' => $request->account_name,
             'bank_name' => $request->bank_name,
@@ -86,7 +91,13 @@ class BankAccountController extends Controller
             'swift_code' => $request->swift_code,
             'notes' => $request->notes,
             'status' => 'active',
+            'is_default' => false,
         ]);
+
+        // Si is_default es true, establecer esta cuenta como predeterminada
+        if ($request->is_default) {
+            $account->setAsDefault();
+        }
 
         return response()->json([
             'success' => true,
@@ -112,11 +123,13 @@ class BankAccountController extends Controller
 
         $request->validate([
             'account_name' => 'required|string|max:100',
-            'bank_name' => 'required|string|max:100',
+            'bank_id' => 'nullable|exists:banks,id',
+            'bank_name' => 'required_without:bank_id|string|max:100',
             'account_type' => 'required|in:checking,savings,credit',
         ]);
 
         $account->update([
+            'bank_id' => $request->bank_id,
             'account_name' => $request->account_name,
             'bank_name' => $request->bank_name,
             'bank_code' => $request->bank_code,
@@ -125,6 +138,11 @@ class BankAccountController extends Controller
             'swift_code' => $request->swift_code,
             'notes' => $request->notes,
         ]);
+
+        // Si is_default es true, establecer esta cuenta como predeterminada
+        if ($request->is_default && !$account->is_default) {
+            $account->setAsDefault();
+        }
 
         return response()->json([
             'success' => true,
@@ -144,6 +162,25 @@ class BankAccountController extends Controller
             'success' => true,
             'message' => 'Estado actualizado exitosamente',
             'status' => $newStatus
+        ]);
+    }
+
+    public function setDefault($id)
+    {
+        $account = BankAccount::findOrFail($id);
+
+        if ($account->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se puede establecer como predeterminada una cuenta activa'
+            ], 400);
+        }
+
+        $account->setAsDefault();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cuenta establecida como predeterminada exitosamente'
         ]);
     }
 

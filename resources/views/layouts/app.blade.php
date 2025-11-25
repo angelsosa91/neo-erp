@@ -284,11 +284,16 @@
                     <i class="bi bi-cash-coin"></i> Caja
                 </a>
             </li>
-            <li class="has-submenu {{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'open' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'active' : '' }}">
                     <i class="bi bi-bank"></i> Bancos
                 </a>
-                <ul class="submenu {{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'show' : '' }}">
+                    <li>
+                        <a href="{{ route('banks.index') }}" class="{{ request()->routeIs('banks.*') ? 'active' : '' }}">
+                            <i class="bi bi-bank"></i> Bancos
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('bank-accounts.index') }}" class="{{ request()->routeIs('bank-accounts.*') ? 'active' : '' }}">
                             <i class="bi bi-credit-card-2-front"></i> Cuentas Bancarias

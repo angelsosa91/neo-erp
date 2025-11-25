@@ -12,6 +12,7 @@ class BankAccount extends Model
 
     protected $fillable = [
         'tenant_id',
+        'bank_id',
         'account_number',
         'account_name',
         'bank_name',
@@ -24,12 +25,19 @@ class BankAccount extends Model
         'swift_code',
         'notes',
         'status',
+        'is_default',
     ];
 
     protected $casts = [
         'initial_balance' => 'decimal:2',
         'current_balance' => 'decimal:2',
+        'is_default' => 'boolean',
     ];
+
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
 
     public function transactions(): HasMany
     {
@@ -83,5 +91,39 @@ class BankAccount extends Model
             ->where('status', 'completed')
             ->orderBy('transaction_date', 'desc')
             ->get();
+    }
+
+    /**
+     * Obtener la cuenta bancaria predeterminada
+     */
+    public static function getDefaultAccount($tenantId)
+    {
+        return self::where('tenant_id', $tenantId)
+            ->where('is_default', true)
+            ->where('status', 'active')
+            ->first();
+    }
+
+    /**
+     * Establecer esta cuenta como predeterminada
+     */
+    public function setAsDefault(): void
+    {
+        // Quitar el flag is_default de todas las cuentas del tenant
+        self::where('tenant_id', $this->tenant_id)
+            ->where('is_default', true)
+            ->update(['is_default' => false]);
+
+        // Establecer esta cuenta como predeterminada
+        $this->is_default = true;
+        $this->save();
+    }
+
+    /**
+     * Scope para cuentas activas
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
     }
 }

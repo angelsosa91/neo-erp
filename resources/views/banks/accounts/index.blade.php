@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Cuentas Bancarias')
+@section('page-title', 'Cuentas Bancarias')
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">

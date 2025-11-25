@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\AccountPayable;
 use App\Models\CashRegister;
+use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -241,6 +243,38 @@ class PurchaseController extends Controller
                 $cashRegister->save();
             }
 
+            // Si es compra al contado por transferencia, registrar en cuenta bancaria predeterminada
+            if ($purchase->payment_type === 'cash' && $purchase->payment_method === 'transfer') {
+                $defaultAccount = BankAccount::getDefaultAccount(Auth::user()->tenant_id);
+
+                if (!$defaultAccount) {
+                    throw new \Exception('Debe configurar una cuenta bancaria predeterminada para registrar transferencias');
+                }
+
+                // Validar que haya saldo suficiente en la cuenta bancaria
+                $defaultAccount->updateBalance();
+                if ($defaultAccount->current_balance < $purchase->total) {
+                    throw new \Exception('Saldo insuficiente en cuenta bancaria. Disponible: ' . number_format($defaultAccount->current_balance, 0, ',', '.') . ' Gs.');
+                }
+
+                // Crear transacción bancaria
+                BankTransaction::create([
+                    'tenant_id' => Auth::user()->tenant_id,
+                    'bank_account_id' => $defaultAccount->id,
+                    'transaction_number' => BankTransaction::generateTransactionNumber(Auth::user()->tenant_id),
+                    'transaction_date' => $purchase->purchase_date,
+                    'type' => 'withdrawal',
+                    'amount' => $purchase->total,
+                    'description' => 'Compra ' . $purchase->purchase_number . ' - ' . $purchase->supplier->name,
+                    'reference' => $purchase->purchase_number,
+                    'status' => 'completed',
+                    'reconciled' => false,
+                ]);
+
+                // Actualizar saldo de cuenta bancaria
+                $defaultAccount->updateBalance();
+            }
+
             DB::commit();
 
             return response()->json([
@@ -299,6 +333,24 @@ class PurchaseController extends Controller
                         $cashRegister->payments -= $purchase->total;
                         $cashRegister->calculateExpectedBalance();
                         $cashRegister->save();
+                    }
+                }
+
+                // Si fue compra por transferencia, cancelar la transacción bancaria
+                if ($purchase->payment_type === 'cash' && $purchase->payment_method === 'transfer') {
+                    // Buscar la transacción bancaria relacionada
+                    $bankTransaction = BankTransaction::where('tenant_id', Auth::user()->tenant_id)
+                        ->where('reference', $purchase->purchase_number)
+                        ->where('type', 'withdrawal')
+                        ->where('status', 'completed')
+                        ->first();
+
+                    if ($bankTransaction) {
+                        $bankTransaction->status = 'cancelled';
+                        $bankTransaction->save();
+
+                        // Actualizar saldo de cuenta bancaria
+                        $bankTransaction->bankAccount->updateBalance();
                     }
                 }
             }

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Nuevo Ajuste de Inventario')
+@section('page-title', 'Nuevo Ajuste de Inventario')
 
 @section('content')
 <div class="card">
