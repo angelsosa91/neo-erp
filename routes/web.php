@@ -22,6 +22,7 @@ use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CheckController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\AccountChartController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -234,4 +235,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/checks/{check}/cash', [CheckController::class, 'cashCheck'])->name('checks.cash');
     Route::post('/checks/{check}/bounce', [CheckController::class, 'bounceCheck'])->name('checks.bounce');
     Route::post('/checks/{check}/cancel', [CheckController::class, 'cancel'])->name('checks.cancel');
+
+    // Contabilidad - Plan de Cuentas
+    Route::get('/account-chart', [AccountChartController::class, 'index'])->name('account-chart.index');
+    Route::get('/account-chart/tree', [AccountChartController::class, 'tree'])->name('account-chart.tree');
+    Route::get('/account-chart/detail-accounts', [AccountChartController::class, 'detailAccounts'])->name('account-chart.detail-accounts');
+    Route::get('/account-chart/generate-code', [AccountChartController::class, 'generateCode'])->name('account-chart.generate-code');
+    Route::post('/account-chart', [AccountChartController::class, 'store'])->name('account-chart.store');
+    Route::get('/account-chart/{account}', [AccountChartController::class, 'show'])->name('account-chart.show');
+    Route::put('/account-chart/{account}', [AccountChartController::class, 'update'])->name('account-chart.update');
+    Route::delete('/account-chart/{account}', [AccountChartController::class, 'destroy'])->name('account-chart.destroy');
 });

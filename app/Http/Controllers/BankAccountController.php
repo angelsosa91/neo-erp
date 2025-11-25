@@ -41,7 +41,14 @@ class BankAccountController extends Controller
         $total = $query->count();
         $rows = $query->skip($request->offset ?? 0)
             ->take($request->limit ?? 20)
-            ->get();
+            ->get()
+            ->map(function($account) {
+                // Asegurar que bank_name se llene desde la relación si existe bank_id
+                if ($account->bank_id && $account->bank) {
+                    $account->bank_name = $account->bank->name;
+                }
+                return $account;
+            });
 
         return response()->json([
             'total' => $total,
@@ -70,19 +77,21 @@ class BankAccountController extends Controller
         $request->validate([
             'account_number' => 'required|string|max:50|unique:bank_accounts',
             'account_name' => 'required|string|max:100',
-            'bank_id' => 'nullable|exists:banks,id',
-            'bank_name' => 'required_without:bank_id|string|max:100',
+            'bank_id' => 'required|exists:banks,id',
             'account_type' => 'required|in:checking,savings,credit',
             'initial_balance' => 'required|numeric|min:0',
         ]);
+
+        // Obtener el banco para guardar su información
+        $bank = \App\Models\Bank::find($request->bank_id);
 
         $account = BankAccount::create([
             'tenant_id' => Auth::user()->tenant_id,
             'bank_id' => $request->bank_id,
             'account_number' => $request->account_number,
             'account_name' => $request->account_name,
-            'bank_name' => $request->bank_name,
-            'bank_code' => $request->bank_code,
+            'bank_name' => $bank->name,
+            'bank_code' => $bank->code,
             'account_type' => $request->account_type,
             'currency' => $request->currency ?? 'PYG',
             'initial_balance' => $request->initial_balance,
@@ -123,16 +132,18 @@ class BankAccountController extends Controller
 
         $request->validate([
             'account_name' => 'required|string|max:100',
-            'bank_id' => 'nullable|exists:banks,id',
-            'bank_name' => 'required_without:bank_id|string|max:100',
+            'bank_id' => 'required|exists:banks,id',
             'account_type' => 'required|in:checking,savings,credit',
         ]);
+
+        // Obtener el banco para guardar su información
+        $bank = \App\Models\Bank::find($request->bank_id);
 
         $account->update([
             'bank_id' => $request->bank_id,
             'account_name' => $request->account_name,
-            'bank_name' => $request->bank_name,
-            'bank_code' => $request->bank_code,
+            'bank_name' => $bank->name,
+            'bank_code' => $bank->code,
             'account_type' => $request->account_type,
             'account_holder' => $request->account_holder,
             'swift_code' => $request->swift_code,

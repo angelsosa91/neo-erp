@@ -9,6 +9,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-tip" onclick="viewDetail()">Ver Detalle</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" onclick="editAccount()">Editar</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="toggleStatus()">Activar/Desactivar</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-star" onclick="setAsDefault()">Establecer Predeterminada</a>
     <span style="margin-left: 20px;">
         <select id="status_filter" class="easyui-combobox" style="width: 150px;" data-options="
             panelHeight: 'auto',
@@ -51,6 +52,7 @@
             <th data-options="field:'initial_balance',width:100,align:'right',formatter:formatMoney">Saldo Inicial</th>
             <th data-options="field:'current_balance',width:100,align:'right',formatter:formatMoney">Saldo Actual</th>
             <th data-options="field:'currency',width:60,align:'center'">Moneda</th>
+            <th data-options="field:'is_default',width:80,align:'center',formatter:formatDefault">Predeterminada</th>
             <th data-options="field:'status',width:80,align:'center',formatter:formatStatus">Estado</th>
         </tr>
     </thead>
@@ -70,15 +72,18 @@
                 <input type="text" class="form-control" id="account_name" required>
             </div>
         </div>
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <label class="form-label">Banco <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="bank_name" required>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Código del Banco</label>
-                <input type="text" class="form-control" id="bank_code">
-            </div>
+        <div class="mb-3">
+            <label class="form-label">Banco <span class="text-danger">*</span></label>
+            <select id="bank_id" class="easyui-combobox" style="width: 100%;" data-options="
+                url: '{{ route('banks.active') }}',
+                method: 'get',
+                valueField: 'id',
+                textField: 'name',
+                panelHeight: 'auto',
+                required: true,
+                editable: false,
+                onSelect: function(record) { onBankSelect(record); }
+            "></select>
         </div>
         <div class="row mb-3">
             <div class="col-md-4">
@@ -150,11 +155,23 @@ function formatStatus(value) {
     }
 }
 
+function formatDefault(value) {
+    return value ? '<span class="badge bg-warning"><i class="fas fa-star"></i> Sí</span>' : '';
+}
+
+function onBankSelect(record) {
+    // El código SWIFT y otros datos se pueden completar automáticamente si es necesario
+    if (record.swift_code) {
+        $('#swift_code').val(record.swift_code);
+    }
+}
+
 function newAccount() {
     isEditMode = false;
     currentAccountId = null;
     $('#accountTitle').text('Nueva Cuenta Bancaria');
     $('#accountForm')[0].reset();
+    $('#bank_id').combobox('clear');
     $('#account_number').prop('disabled', false);
     $('#initial_balance').prop('disabled', false);
     $('#accountDlg').dialog('open');
@@ -173,8 +190,14 @@ function editAccount() {
 
     $('#account_number').val(row.account_number).prop('disabled', true);
     $('#account_name').val(row.account_name);
-    $('#bank_name').val(row.bank_name);
-    $('#bank_code').val(row.bank_code);
+
+    // Cargar el banco seleccionado
+    if (row.bank_id) {
+        $('#bank_id').combobox('setValue', row.bank_id);
+    } else {
+        $('#bank_id').combobox('clear');
+    }
+
     $('#account_type').val(row.account_type);
     $('#currency').val(row.currency);
     $('#initial_balance').val(row.initial_balance).prop('disabled', true);
@@ -191,11 +214,16 @@ function submitAccount() {
         return;
     }
 
+    var bankId = $('#bank_id').combobox('getValue');
+    if (!bankId) {
+        $.messager.alert('Validación', 'Debe seleccionar un banco', 'warning');
+        return;
+    }
+
     var data = {
         account_number: $('#account_number').val(),
         account_name: $('#account_name').val(),
-        bank_name: $('#bank_name').val(),
-        bank_code: $('#bank_code').val(),
+        bank_id: bankId,
         account_type: $('#account_type').val(),
         currency: $('#currency').val(),
         initial_balance: $('#initial_balance').val(),
@@ -266,6 +294,42 @@ function filterByStatus(value) {
 
 function doSearch(value) {
     $('#dg').datagrid('load', { search: value });
+}
+
+function setAsDefault() {
+    var row = $('#dg').datagrid('getSelected');
+    if (!row) {
+        $.messager.alert('Información', 'Seleccione una cuenta', 'info');
+        return;
+    }
+
+    if (row.status !== 'active') {
+        $.messager.alert('Advertencia', 'Solo puede establecer como predeterminada una cuenta activa', 'warning');
+        return;
+    }
+
+    if (row.is_default) {
+        $.messager.alert('Información', 'Esta cuenta ya es la predeterminada', 'info');
+        return;
+    }
+
+    $.messager.confirm('Confirmar', '¿Desea establecer esta cuenta como predeterminada para transferencias bancarias?', function(r) {
+        if (r) {
+            $.ajax({
+                url: '{{ url('bank-accounts') }}/' + row.id + '/set-default',
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function(response) {
+                    $.messager.show({ title: 'Éxito', msg: response.message, timeout: 3000, showType: 'slide' });
+                    $('#dg').datagrid('reload');
+                },
+                error: function(xhr) {
+                    var msg = xhr.responseJSON?.message || 'Error';
+                    $.messager.alert('Error', msg, 'error');
+                }
+            });
+        }
+    });
 }
 </script>
 @endsection

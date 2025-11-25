@@ -311,6 +311,18 @@
                     </li>
                 </ul>
             </li>
+            <li class="has-submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i> Contabilidad
+                </a>
+                <ul class="submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'show' : '' }}">
+                    <li>
+                        <a href="{{ route('account-chart.index') }}" class="{{ request()->routeIs('account-chart.*') ? 'active' : '' }}">
+                            <i class="bi bi-diagram-3"></i> Plan de Cuentas
+                        </a>
+                    </li>
+                </ul>
+            </li>
             <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i> Usuarios

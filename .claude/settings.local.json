@@ -10,7 +10,9 @@
       "Bash(\"c:/xampp/php/php.exe\" artisan make:migration add_user_date_status_index_to_cash_registers)",
       "Bash(\"c:/xampp/php/php.exe\" artisan db:seed)",
       "Bash(\"c:/xampp/php/php.exe\" artisan tinker:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:migration:*)"
+      "Bash(\"c:/xampp/php/php.exe\" artisan make:migration:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan db:seed:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan make:controller:*)"
     ],
     "deny": [],
     "ask": []
