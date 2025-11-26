@@ -9,7 +9,7 @@
         <div class="row align-items-center">
             <div class="col-md-3">
                 <label class="form-label">Categoría</label>
-                <input id="category_id" style="width: 100%;">
+                <input id="category_id" style="width: 100%;height:38px;">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Filtro de Stock</label>
