@@ -108,6 +108,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
     Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
     Route::get('/sales/{sale}/detail', [SaleController::class, 'detail'])->name('sales.detail');
+    Route::get('/sales/{sale}/pdf', [SaleController::class, 'generatePDF'])->name('sales.pdf');
+    Route::get('/sales/{sale}/download-pdf', [SaleController::class, 'downloadPDF'])->name('sales.download-pdf');
     Route::post('/sales/{sale}/confirm', [SaleController::class, 'confirm'])->name('sales.confirm');
     Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
     Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
@@ -156,6 +158,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
+    // Configuración de Empresa
+    Route::get('/settings/company', [\App\Http\Controllers\CompanySettingController::class, 'index'])->name('settings.company');
+    Route::put('/settings/company', [\App\Http\Controllers\CompanySettingController::class, 'update'])->name('settings.company.update');
+    Route::delete('/settings/company/logo', [\App\Http\Controllers\CompanySettingController::class, 'deleteLogo'])->name('settings.company.delete-logo');
+
+    // Configuración de Documentos
+    Route::get('/settings/documents', [\App\Http\Controllers\DocumentSettingController::class, 'index'])->name('settings.documents');
+    Route::post('/settings/documents', [\App\Http\Controllers\DocumentSettingController::class, 'store'])->name('settings.documents.store');
+    Route::put('/settings/documents/{documentSetting}', [\App\Http\Controllers\DocumentSettingController::class, 'update'])->name('settings.documents.update');
+    Route::delete('/settings/documents/{documentSetting}', [\App\Http\Controllers\DocumentSettingController::class, 'destroy'])->name('settings.documents.destroy');
+
+    // Configuración de Impuestos
+    Route::get('/settings/taxes', [\App\Http\Controllers\TaxSettingController::class, 'index'])->name('settings.taxes');
+    Route::post('/settings/taxes', [\App\Http\Controllers\TaxSettingController::class, 'store'])->name('settings.taxes.store');
+    Route::put('/settings/taxes/{taxSetting}', [\App\Http\Controllers\TaxSettingController::class, 'update'])->name('settings.taxes.update');
+    Route::delete('/settings/taxes/{taxSetting}', [\App\Http\Controllers\TaxSettingController::class, 'destroy'])->name('settings.taxes.destroy');
+
     // Ajustes de Inventario
     Route::get('/inventory-adjustments', [InventoryAdjustmentController::class, 'index'])->name('inventory-adjustments.index');
     Route::get('/inventory-adjustments/data', [InventoryAdjustmentController::class, 'data'])->name('inventory-adjustments.data');
@@ -174,6 +193,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/account-receivables', [AccountReceivableController::class, 'store'])->name('account-receivables.store');
     Route::get('/account-receivables/{accountReceivable}', [AccountReceivableController::class, 'show'])->name('account-receivables.show');
     Route::post('/account-receivables/{accountReceivable}/add-payment', [AccountReceivableController::class, 'addPayment'])->name('account-receivables.add-payment');
+    Route::get('/account-receivables/payment/{payment}/pdf', [AccountReceivableController::class, 'generatePaymentPDF'])->name('account-receivables.payment-pdf');
+    Route::get('/account-receivables/payment/{payment}/download-pdf', [AccountReceivableController::class, 'downloadPaymentPDF'])->name('account-receivables.download-payment-pdf');
     Route::post('/account-receivables/{accountReceivable}/cancel', [AccountReceivableController::class, 'cancel'])->name('account-receivables.cancel');
     Route::delete('/account-receivables/{accountReceivable}', [AccountReceivableController::class, 'destroy'])->name('account-receivables.destroy');
 
@@ -185,6 +206,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/account-payables', [AccountPayableController::class, 'store'])->name('account-payables.store');
     Route::get('/account-payables/{accountPayable}', [AccountPayableController::class, 'show'])->name('account-payables.show');
     Route::post('/account-payables/{accountPayable}/add-payment', [AccountPayableController::class, 'addPayment'])->name('account-payables.add-payment');
+    Route::get('/account-payables/payment/{payment}/pdf', [AccountPayableController::class, 'generatePaymentPDF'])->name('account-payables.payment-pdf');
+    Route::get('/account-payables/payment/{payment}/download-pdf', [AccountPayableController::class, 'downloadPaymentPDF'])->name('account-payables.download-payment-pdf');
     Route::post('/account-payables/{accountPayable}/cancel', [AccountPayableController::class, 'cancel'])->name('account-payables.cancel');
     Route::delete('/account-payables/{accountPayable}', [AccountPayableController::class, 'destroy'])->name('account-payables.destroy');
 

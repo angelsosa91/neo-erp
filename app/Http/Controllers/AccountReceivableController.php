@@ -8,7 +8,9 @@ use App\Models\CashRegister;
 use App\Models\Customer;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\CompanySetting;
 use App\Services\AccountingIntegrationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -274,5 +276,49 @@ class AccountReceivableController extends Controller
         $customers = $query->get();
 
         return view('account-receivables.by-customer', compact('customers'));
+    }
+
+    /**
+     * Generar PDF de recibo de pago
+     */
+    public function generatePaymentPDF($paymentId)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        $payment = AccountReceivablePayment::with(['accountReceivable.sale.customer'])
+            ->findOrFail($paymentId);
+
+        // Verificar pertenencia al tenant
+        if ($payment->accountReceivable->sale->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.payment-receipt', compact('payment', 'companySettings'));
+
+        return $pdf->stream('recibo-' . $payment->payment_number . '.pdf');
+    }
+
+    /**
+     * Descargar PDF de recibo de pago
+     */
+    public function downloadPaymentPDF($paymentId)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        $payment = AccountReceivablePayment::with(['accountReceivable.sale.customer'])
+            ->findOrFail($paymentId);
+
+        // Verificar pertenencia al tenant
+        if ($payment->accountReceivable->sale->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.payment-receipt', compact('payment', 'companySettings'));
+
+        return $pdf->download('recibo-' . $payment->payment_number . '.pdf');
     }
 }

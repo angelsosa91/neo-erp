@@ -8,7 +8,9 @@ use App\Models\CashRegister;
 use App\Models\Supplier;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\CompanySetting;
 use App\Services\AccountingIntegrationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -286,5 +288,49 @@ class AccountPayableController extends Controller
         $suppliers = $query->get();
 
         return view('account-payables.by-supplier', compact('suppliers'));
+    }
+
+    /**
+     * Generar PDF de comprobante de pago
+     */
+    public function generatePaymentPDF($paymentId)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        $payment = AccountPayablePayment::with(['accountPayable.purchase.supplier'])
+            ->findOrFail($paymentId);
+
+        // Verificar pertenencia al tenant
+        if ($payment->accountPayable->purchase->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.payment-voucher', compact('payment', 'companySettings'));
+
+        return $pdf->stream('comprobante-' . $payment->payment_number . '.pdf');
+    }
+
+    /**
+     * Descargar PDF de comprobante de pago
+     */
+    public function downloadPaymentPDF($paymentId)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        $payment = AccountPayablePayment::with(['accountPayable.purchase.supplier'])
+            ->findOrFail($paymentId);
+
+        // Verificar pertenencia al tenant
+        if ($payment->accountPayable->purchase->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.payment-voucher', compact('payment', 'companySettings'));
+
+        return $pdf->download('comprobante-' . $payment->payment_number . '.pdf');
     }
 }

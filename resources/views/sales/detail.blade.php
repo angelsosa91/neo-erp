@@ -21,7 +21,13 @@
                 <i class="bi bi-x-lg"></i> Anular
             </button>
             @endif
-            <button type="button" class="btn btn-primary" onclick="window.print()">
+            <a href="{{ route('sales.pdf', $sale) }}" target="_blank" class="btn btn-primary">
+                <i class="bi bi-file-pdf"></i> Ver PDF
+            </a>
+            <a href="{{ route('sales.download-pdf', $sale) }}" class="btn btn-success">
+                <i class="bi bi-download"></i> Descargar PDF
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">
                 <i class="bi bi-printer"></i> Imprimir
             </button>
         </div>

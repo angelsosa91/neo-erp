@@ -15,7 +15,8 @@
       "Bash(\"c:/xampp/php/php.exe\" artisan make:controller:*)",
       "Bash(\"c:/xampp/php/php.exe\" artisan:*)",
       "Bash(\"c:/xampp/php/php.exe\" artisan make:model:*)",
-      "Bash(if not exist \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\" mkdir \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\")"
+      "Bash(if not exist \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\" mkdir \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\")",
+      "Bash(\"c:/xampp/php/php.exe\" artisan make:model CompanySetting)"
     ],
     "deny": [],
     "ask": []

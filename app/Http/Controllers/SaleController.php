@@ -10,7 +10,9 @@ use App\Models\AccountReceivable;
 use App\Models\CashRegister;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\CompanySetting;
 use App\Services\AccountingIntegrationService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -448,5 +450,45 @@ class SaleController extends Controller
     {
         $sale->load(['customer', 'user', 'items.product', 'accountReceivable', 'journalEntry']);
         return view('sales.detail', compact('sale'));
+    }
+
+    /**
+     * Generar PDF de la factura
+     */
+    public function generatePDF(Sale $sale)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        // Verificar pertenencia al tenant
+        if ($sale->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $sale->load(['customer', 'user', 'items.product']);
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.sale-invoice', compact('sale', 'companySettings'));
+
+        return $pdf->stream('factura-' . $sale->sale_number . '.pdf');
+    }
+
+    /**
+     * Descargar PDF de la factura
+     */
+    public function downloadPDF(Sale $sale)
+    {
+        $tenantId = Auth::user()->tenant_id;
+
+        // Verificar pertenencia al tenant
+        if ($sale->tenant_id != $tenantId) {
+            abort(403);
+        }
+
+        $sale->load(['customer', 'user', 'items.product']);
+        $companySettings = CompanySetting::where('tenant_id', $tenantId)->first();
+
+        $pdf = Pdf::loadView('pdf.sale-invoice', compact('sale', 'companySettings'));
+
+        return $pdf->download('factura-' . $sale->sale_number . '.pdf');
     }
 }
