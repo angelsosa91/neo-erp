@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Neo ERP')</title>
-    
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <meta name="theme-color" content="#3498db">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+
     <!-- jEasyUI CSS -->
     <link rel="stylesheet" type="text/css" href="https://www.jeasyui.com/easyui/themes/default/easyui.css">
     <link rel="stylesheet" type="text/css" href="https://www.jeasyui.com/easyui/themes/icon.css">
@@ -576,6 +582,31 @@
                     <li>
                         <a href="{{ route('reports.inventory') }}" class="{{ request()->routeIs('reports.inventory') ? 'active' : '' }}">
                             <i class="bi bi-box-seam"></i> Inventario
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.cash-flow') }}" class="{{ request()->routeIs('reports.cash-flow') ? 'active' : '' }}">
+                            <i class="bi bi-arrow-left-right"></i> Flujo de Caja
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.aging-report') }}" class="{{ request()->routeIs('reports.aging-report') ? 'active' : '' }}">
+                            <i class="bi bi-clock-history"></i> Antigüedad de Saldos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.top-products') }}" class="{{ request()->routeIs('reports.top-products') ? 'active' : '' }}">
+                            <i class="bi bi-trophy"></i> Productos Más Vendidos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.profitability') }}" class="{{ request()->routeIs('reports.profitability') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up-arrow"></i> Rentabilidad
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('reports.inventory-movements') }}" class="{{ request()->routeIs('reports.inventory-movements') ? 'active' : '' }}">
+                            <i class="bi bi-arrow-down-up"></i> Movimientos de Inventario
                         </a>
                     </li>
                 </ul>

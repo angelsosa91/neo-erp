@@ -403,7 +403,7 @@ class ReportController extends Controller
             // Cuentas por Cobrar
             $accounts = AccountReceivable::with(['sale.customer'])
                 ->where('tenant_id', $tenantId)
-                ->where('balance_amount', '>', 0)
+                ->where('balance', '>', 0)
                 ->get()
                 ->map(function($account) use ($asOfDate) {
                     $dueDate = Carbon::parse($account->due_date);
@@ -411,8 +411,9 @@ class ReportController extends Controller
                     $daysOverdue = $asOf->diffInDays($dueDate, false);
 
                     $account->days_overdue = $daysOverdue > 0 ? 0 : abs($daysOverdue);
-                    $account->customer_name = $account->sale->customer->name;
+                    $account->partner_name = $account->sale->customer->name;
                     $account->document_number = $account->sale->sale_number;
+                    $account->date = $account->sale->sale_date;
 
                     // Clasificar por antigüedad
                     if ($daysOverdue > 0) {
@@ -433,7 +434,7 @@ class ReportController extends Controller
             // Cuentas por Pagar
             $accounts = AccountPayable::with(['purchase.supplier'])
                 ->where('tenant_id', $tenantId)
-                ->where('balance_amount', '>', 0)
+                ->where('balance', '>', 0)
                 ->get()
                 ->map(function($account) use ($asOfDate) {
                     $dueDate = Carbon::parse($account->due_date);
@@ -441,8 +442,9 @@ class ReportController extends Controller
                     $daysOverdue = $asOf->diffInDays($dueDate, false);
 
                     $account->days_overdue = $daysOverdue > 0 ? 0 : abs($daysOverdue);
-                    $account->supplier_name = $account->purchase->supplier->name;
+                    $account->partner_name = $account->purchase->supplier->name;
                     $account->document_number = $account->purchase->purchase_number;
+                    $account->date = $account->purchase->purchase_date;
 
                     // Clasificar por antigüedad
                     if ($daysOverdue > 0) {
@@ -463,11 +465,11 @@ class ReportController extends Controller
 
         // Totales por bucket
         $summary = [
-            'current' => $accounts->where('aging_bucket', 'current')->sum('balance_amount'),
-            '1-30' => $accounts->where('aging_bucket', '1-30')->sum('balance_amount'),
-            '31-60' => $accounts->where('aging_bucket', '31-60')->sum('balance_amount'),
-            '61-90' => $accounts->where('aging_bucket', '61-90')->sum('balance_amount'),
-            '90+' => $accounts->where('aging_bucket', '90+')->sum('balance_amount'),
+            'current' => $accounts->where('aging_bucket', 'current')->sum('balance'),
+            '1-30' => $accounts->where('aging_bucket', '1-30')->sum('balance'),
+            '31-60' => $accounts->where('aging_bucket', '31-60')->sum('balance'),
+            '61-90' => $accounts->where('aging_bucket', '61-90')->sum('balance'),
+            '90+' => $accounts->where('aging_bucket', '90+')->sum('balance'),
         ];
         $summary['total'] = array_sum($summary);
 
@@ -492,24 +494,19 @@ class ReportController extends Controller
             ->select(
                 'products.id',
                 'products.name',
-                'products.sku',
-                'products.price',
+                'products.code',
                 DB::raw('SUM(sale_items.quantity) as total_quantity'),
                 DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+                DB::raw('SUM(sale_items.subtotal) / SUM(sale_items.quantity) as avg_price'),
                 DB::raw('COUNT(DISTINCT sales.id) as total_orders')
             )
-            ->groupBy('products.id', 'products.name', 'products.sku', 'products.price')
+            ->groupBy('products.id', 'products.name', 'products.code')
             ->orderBy('total_quantity', 'desc')
             ->limit($limit)
             ->get();
 
-        $totalRevenue = $topProducts->sum('total_revenue');
-        $totalQuantity = $topProducts->sum('total_quantity');
-
         return view('reports.top-products', compact(
             'topProducts',
-            'totalRevenue',
-            'totalQuantity',
             'startDate',
             'endDate',
             'limit'
@@ -543,12 +540,10 @@ class ReportController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'sku' => $product->sku,
-                    'cost' => $product->cost,
-                    'price' => $product->price,
+                    'code' => $product->code,
                     'quantity_sold' => $totalSold,
                     'revenue' => $revenue,
-                    'cost_total' => $cost,
+                    'cost' => $cost,
                     'profit' => $profit,
                     'margin' => $margin,
                 ];
@@ -557,15 +552,20 @@ class ReportController extends Controller
             ->sortByDesc('profit')
             ->values();
 
-        $totals = [
-            'revenue' => $products->sum('revenue'),
-            'cost' => $products->sum('cost_total'),
-            'profit' => $products->sum('profit'),
-        ];
-        $totals['margin'] = $totals['revenue'] > 0 ?
-            ($totals['profit'] / $totals['revenue']) * 100 : 0;
+        $totalRevenue = $products->sum('revenue');
+        $totalCost = $products->sum('cost');
+        $totalProfit = $products->sum('profit');
+        $avgMargin = $totalRevenue > 0 ? ($totalProfit / $totalRevenue) * 100 : 0;
 
-        return view('reports.profitability', compact('products', 'totals', 'startDate', 'endDate'));
+        return view('reports.profitability', compact(
+            'products',
+            'totalRevenue',
+            'totalCost',
+            'totalProfit',
+            'avgMargin',
+            'startDate',
+            'endDate'
+        ));
     }
 
     /**
@@ -587,16 +587,19 @@ class ReportController extends Controller
             ->when($productId, function($q) use ($productId) {
                 $q->where('sale_items.product_id', $productId);
             })
-            ->select(
-                'sales.sale_date as date',
-                'products.name as product_name',
-                'products.sku',
-                'sale_items.quantity',
-                DB::raw("'Venta' as type"),
-                DB::raw("'out' as direction"),
-                'sales.sale_number as reference'
-            )
-            ->get();
+            ->get()
+            ->map(function($item) {
+                return [
+                    'date' => $item->sale->sale_date,
+                    'product_name' => $item->product->name,
+                    'product_code' => $item->product->code,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total_value' => $item->subtotal,
+                    'type' => 'OUT',
+                    'document_number' => $item->sale->sale_number,
+                ];
+            });
 
         // Movimientos de entrada (compras)
         $purchasesIn = DB::table('purchase_items')
@@ -611,34 +614,34 @@ class ReportController extends Controller
             ->select(
                 'purchases.purchase_date as date',
                 'products.name as product_name',
-                'products.sku',
+                'products.code as product_code',
                 'purchase_items.quantity',
-                DB::raw("'Compra' as type"),
-                DB::raw("'in' as direction"),
-                'purchases.purchase_number as reference'
+                'purchase_items.unit_price',
+                DB::raw('purchase_items.quantity * purchase_items.unit_price as total_value'),
+                DB::raw("'IN' as type"),
+                'purchases.purchase_number as document_number'
             )
             ->get();
 
         // Combinar y ordenar
-        $movements = $salesOut->concat($purchasesIn)
+        $movements = collect($salesOut)->concat($purchasesIn)
             ->sortBy('date')
             ->values();
 
         // Resumen
-        $summary = [
-            'total_in' => $purchasesIn->sum('quantity'),
-            'total_out' => $salesOut->sum('quantity'),
-            'net_movement' => $purchasesIn->sum('quantity') - $salesOut->sum('quantity'),
-        ];
+        $totalIn = collect($purchasesIn)->sum('quantity');
+        $totalOut = collect($salesOut)->sum('quantity');
 
-        $products = Product::where('tenant_id', $tenantId)
+        // Obtener todos los productos para el filtro
+        $allProducts = Product::where('tenant_id', $tenantId)
             ->orderBy('name')
-            ->get(['id', 'name', 'sku']);
+            ->get(['id', 'name', 'code']);
 
         return view('reports.inventory-movements', compact(
             'movements',
-            'summary',
-            'products',
+            'totalIn',
+            'totalOut',
+            'allProducts',
             'startDate',
             'endDate',
             'productId'
