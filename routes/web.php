@@ -26,6 +26,7 @@ use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\AccountingSettingController;
 use App\Http\Controllers\FinancialStatementController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -44,7 +45,13 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 // Rutas protegidas
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
+    // Perfil de Usuario
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::get('/profile/login-history', [ProfileController::class, 'loginHistory'])->name('profile.login-history');
+
     // Usuarios
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/data', [UserController::class, 'data'])->name('users.data');
