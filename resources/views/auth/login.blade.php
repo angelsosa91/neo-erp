@@ -161,6 +161,11 @@
             transition: all 0.3s ease;
         }
 
+        .input-group.has-toggle .form-control {
+            border-right: none;
+            border-radius: 0;
+        }
+
         .form-control:focus {
             border-color: #3498db;
             box-shadow: none;
@@ -169,6 +174,27 @@
 
         .form-control:focus + .input-group-text,
         .input-group:focus-within .input-group-text {
+            border-color: #3498db;
+            background: #e3f2fd;
+            color: #3498db;
+        }
+
+        .toggle-password {
+            background: #ecf0f1;
+            border: 2px solid #ecf0f1;
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #7f8c8d;
+        }
+
+        .toggle-password:hover {
+            color: #3498db;
+        }
+
+        .input-group:focus-within .toggle-password {
             border-color: #3498db;
             background: #e3f2fd;
             color: #3498db;
@@ -333,7 +359,7 @@
 
                 <div class="mb-3">
                     <label for="password" class="form-label">Contraseña</label>
-                    <div class="input-group">
+                    <div class="input-group has-toggle">
                         <span class="input-group-text">
                             <i class="bi bi-lock-fill"></i>
                         </span>
@@ -343,6 +369,9 @@
                                name="password"
                                placeholder="••••••••"
                                required>
+                        <span class="toggle-password" onclick="togglePassword()">
+                            <i class="bi bi-eye-fill" id="toggleIcon"></i>
+                        </span>
                     </div>
                 </div>
 
@@ -369,5 +398,21 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye-fill');
+                toggleIcon.classList.add('bi-eye-slash-fill');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye-slash-fill');
+                toggleIcon.classList.add('bi-eye-fill');
+            }
+        }
+    </script>
 </body>
 </html>
