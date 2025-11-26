@@ -11,6 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::dropIfExists('settings');
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id');
@@ -21,13 +29,5 @@ return new class extends Migration
             $table->unique(['tenant_id', 'key']);
             $table->index('tenant_id');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('settings');
     }
 };

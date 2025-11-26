@@ -8,8 +8,16 @@ use App\Models\Expense;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Supplier;
+use App\Models\CashRegister;
+use App\Models\AccountReceivable;
+use App\Models\AccountPayable;
+use App\Models\AccountReceivablePayment;
+use App\Models\AccountPayablePayment;
+use App\Models\SaleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -299,5 +307,341 @@ class ReportController extends Controller
             'low_stock' => $lowStock,
             'profit' => ($sales->total ?? 0) - ($purchases->total ?? 0) - ($expenses->total ?? 0),
         ]);
+    }
+
+    /**
+     * Reporte de Flujo de Caja
+     */
+    public function cashFlow(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+
+        // Ingresos
+        $salesIncome = AccountReceivablePayment::whereHas('accountReceivable', function($q) use ($tenantId) {
+                $q->where('tenant_id', $tenantId);
+            })
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->select(
+                DB::raw('DATE(payment_date) as date'),
+                DB::raw('SUM(amount) as amount'),
+                DB::raw("'Cobro de Venta' as description"),
+                DB::raw("'income' as type")
+            )
+            ->groupBy('date')
+            ->get();
+
+        // Egresos - Pagos a proveedores
+        $purchasePayments = AccountPayablePayment::whereHas('accountPayable', function($q) use ($tenantId) {
+                $q->where('tenant_id', $tenantId);
+            })
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->select(
+                DB::raw('DATE(payment_date) as date'),
+                DB::raw('SUM(amount) as amount'),
+                DB::raw("'Pago a Proveedor' as description"),
+                DB::raw("'expense' as type")
+            )
+            ->groupBy('date')
+            ->get();
+
+        // Egresos - Gastos
+        $expenses = Expense::where('tenant_id', $tenantId)
+            ->whereBetween('expense_date', [$startDate, $endDate])
+            ->select(
+                DB::raw('DATE(expense_date) as date'),
+                DB::raw('SUM(amount) as amount'),
+                DB::raw("'Gasto Operativo' as description"),
+                DB::raw("'expense' as type")
+            )
+            ->groupBy('date')
+            ->get();
+
+        // Combinar todos los movimientos
+        $movements = $salesIncome->concat($purchasePayments)->concat($expenses)
+            ->sortBy('date')
+            ->values();
+
+        // Calcular saldo acumulado
+        $balance = 0;
+        $movementsWithBalance = $movements->map(function($item) use (&$balance) {
+            if ($item->type === 'income') {
+                $balance += $item->amount;
+            } else {
+                $balance -= $item->amount;
+            }
+            $item->balance = $balance;
+            return $item;
+        });
+
+        // Totales
+        $totalIncome = $salesIncome->sum('amount');
+        $totalExpense = $purchasePayments->sum('amount') + $expenses->sum('amount');
+        $netCashFlow = $totalIncome - $totalExpense;
+
+        return view('reports.cash-flow', compact(
+            'movementsWithBalance',
+            'totalIncome',
+            'totalExpense',
+            'netCashFlow',
+            'startDate',
+            'endDate'
+        ));
+    }
+
+    /**
+     * Reporte de Antigüedad de Saldos (Aging Report)
+     */
+    public function agingReport(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $type = $request->get('type', 'receivable'); // receivable o payable
+        $asOfDate = $request->get('as_of_date', now()->format('Y-m-d'));
+
+        if ($type === 'receivable') {
+            // Cuentas por Cobrar
+            $accounts = AccountReceivable::with(['sale.customer'])
+                ->where('tenant_id', $tenantId)
+                ->where('balance_amount', '>', 0)
+                ->get()
+                ->map(function($account) use ($asOfDate) {
+                    $dueDate = Carbon::parse($account->due_date);
+                    $asOf = Carbon::parse($asOfDate);
+                    $daysOverdue = $asOf->diffInDays($dueDate, false);
+
+                    $account->days_overdue = $daysOverdue > 0 ? 0 : abs($daysOverdue);
+                    $account->customer_name = $account->sale->customer->name;
+                    $account->document_number = $account->sale->sale_number;
+
+                    // Clasificar por antigüedad
+                    if ($daysOverdue > 0) {
+                        $account->aging_bucket = 'current';
+                    } elseif ($daysOverdue >= -30) {
+                        $account->aging_bucket = '1-30';
+                    } elseif ($daysOverdue >= -60) {
+                        $account->aging_bucket = '31-60';
+                    } elseif ($daysOverdue >= -90) {
+                        $account->aging_bucket = '61-90';
+                    } else {
+                        $account->aging_bucket = '90+';
+                    }
+
+                    return $account;
+                });
+        } else {
+            // Cuentas por Pagar
+            $accounts = AccountPayable::with(['purchase.supplier'])
+                ->where('tenant_id', $tenantId)
+                ->where('balance_amount', '>', 0)
+                ->get()
+                ->map(function($account) use ($asOfDate) {
+                    $dueDate = Carbon::parse($account->due_date);
+                    $asOf = Carbon::parse($asOfDate);
+                    $daysOverdue = $asOf->diffInDays($dueDate, false);
+
+                    $account->days_overdue = $daysOverdue > 0 ? 0 : abs($daysOverdue);
+                    $account->supplier_name = $account->purchase->supplier->name;
+                    $account->document_number = $account->purchase->purchase_number;
+
+                    // Clasificar por antigüedad
+                    if ($daysOverdue > 0) {
+                        $account->aging_bucket = 'current';
+                    } elseif ($daysOverdue >= -30) {
+                        $account->aging_bucket = '1-30';
+                    } elseif ($daysOverdue >= -60) {
+                        $account->aging_bucket = '31-60';
+                    } elseif ($daysOverdue >= -90) {
+                        $account->aging_bucket = '61-90';
+                    } else {
+                        $account->aging_bucket = '90+';
+                    }
+
+                    return $account;
+                });
+        }
+
+        // Totales por bucket
+        $summary = [
+            'current' => $accounts->where('aging_bucket', 'current')->sum('balance_amount'),
+            '1-30' => $accounts->where('aging_bucket', '1-30')->sum('balance_amount'),
+            '31-60' => $accounts->where('aging_bucket', '31-60')->sum('balance_amount'),
+            '61-90' => $accounts->where('aging_bucket', '61-90')->sum('balance_amount'),
+            '90+' => $accounts->where('aging_bucket', '90+')->sum('balance_amount'),
+        ];
+        $summary['total'] = array_sum($summary);
+
+        return view('reports.aging-report', compact('accounts', 'summary', 'type', 'asOfDate'));
+    }
+
+    /**
+     * Reporte de Productos Más Vendidos
+     */
+    public function topProducts(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+        $limit = $request->get('limit', 20);
+
+        $topProducts = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('sales.tenant_id', $tenantId)
+            ->where('sales.status', 'confirmed')
+            ->whereBetween('sales.sale_date', [$startDate, $endDate])
+            ->select(
+                'products.id',
+                'products.name',
+                'products.sku',
+                'products.price',
+                DB::raw('SUM(sale_items.quantity) as total_quantity'),
+                DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+                DB::raw('COUNT(DISTINCT sales.id) as total_orders')
+            )
+            ->groupBy('products.id', 'products.name', 'products.sku', 'products.price')
+            ->orderBy('total_quantity', 'desc')
+            ->limit($limit)
+            ->get();
+
+        $totalRevenue = $topProducts->sum('total_revenue');
+        $totalQuantity = $topProducts->sum('total_quantity');
+
+        return view('reports.top-products', compact(
+            'topProducts',
+            'totalRevenue',
+            'totalQuantity',
+            'startDate',
+            'endDate',
+            'limit'
+        ));
+    }
+
+    /**
+     * Reporte de Rentabilidad por Producto
+     */
+    public function profitability(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+
+        $products = Product::where('tenant_id', $tenantId)
+            ->with(['saleItems' => function($q) use ($startDate, $endDate) {
+                $q->whereHas('sale', function($sq) use ($startDate, $endDate) {
+                    $sq->where('status', 'confirmed')
+                      ->whereBetween('sale_date', [$startDate, $endDate]);
+                });
+            }])
+            ->get()
+            ->map(function($product) {
+                $totalSold = $product->saleItems->sum('quantity');
+                $revenue = $product->saleItems->sum('subtotal');
+                $cost = $totalSold * $product->cost;
+                $profit = $revenue - $cost;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'cost' => $product->cost,
+                    'price' => $product->price,
+                    'quantity_sold' => $totalSold,
+                    'revenue' => $revenue,
+                    'cost_total' => $cost,
+                    'profit' => $profit,
+                    'margin' => $margin,
+                ];
+            })
+            ->where('quantity_sold', '>', 0)
+            ->sortByDesc('profit')
+            ->values();
+
+        $totals = [
+            'revenue' => $products->sum('revenue'),
+            'cost' => $products->sum('cost_total'),
+            'profit' => $products->sum('profit'),
+        ];
+        $totals['margin'] = $totals['revenue'] > 0 ?
+            ($totals['profit'] / $totals['revenue']) * 100 : 0;
+
+        return view('reports.profitability', compact('products', 'totals', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Reporte de Movimientos de Inventario
+     */
+    public function inventoryMovements(Request $request)
+    {
+        $tenantId = Auth::user()->tenant_id;
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+        $productId = $request->get('product_id', '');
+
+        // Movimientos de salida (ventas)
+        $salesOut = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->where('sales.tenant_id', $tenantId)
+            ->where('sales.status', 'confirmed')
+            ->whereBetween('sales.sale_date', [$startDate, $endDate])
+            ->when($productId, function($q) use ($productId) {
+                $q->where('sale_items.product_id', $productId);
+            })
+            ->select(
+                'sales.sale_date as date',
+                'products.name as product_name',
+                'products.sku',
+                'sale_items.quantity',
+                DB::raw("'Venta' as type"),
+                DB::raw("'out' as direction"),
+                'sales.sale_number as reference'
+            )
+            ->get();
+
+        // Movimientos de entrada (compras)
+        $purchasesIn = DB::table('purchase_items')
+            ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+            ->join('products', 'purchase_items.product_id', '=', 'products.id')
+            ->where('purchases.tenant_id', $tenantId)
+            ->where('purchases.status', 'confirmed')
+            ->whereBetween('purchases.purchase_date', [$startDate, $endDate])
+            ->when($productId, function($q) use ($productId) {
+                $q->where('purchase_items.product_id', $productId);
+            })
+            ->select(
+                'purchases.purchase_date as date',
+                'products.name as product_name',
+                'products.sku',
+                'purchase_items.quantity',
+                DB::raw("'Compra' as type"),
+                DB::raw("'in' as direction"),
+                'purchases.purchase_number as reference'
+            )
+            ->get();
+
+        // Combinar y ordenar
+        $movements = $salesOut->concat($purchasesIn)
+            ->sortBy('date')
+            ->values();
+
+        // Resumen
+        $summary = [
+            'total_in' => $purchasesIn->sum('quantity'),
+            'total_out' => $salesOut->sum('quantity'),
+            'net_movement' => $purchasesIn->sum('quantity') - $salesOut->sum('quantity'),
+        ];
+
+        $products = Product::where('tenant_id', $tenantId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'sku']);
+
+        return view('reports.inventory-movements', compact(
+            'movements',
+            'summary',
+            'products',
+            'startDate',
+            'endDate',
+            'productId'
+        ));
     }
 }

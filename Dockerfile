@@ -53,10 +53,17 @@ COPY . .
 # Generate optimized autoload files
 RUN composer dump-autoload --optimize --classmap-authoritative
 
+# Create storage directory structure
+RUN mkdir -p storage/app/public/logos \
+    && mkdir -p storage/app/public/documents \
+    && mkdir -p storage/framework/{cache,sessions,views} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 # Copy nginx configuration
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf

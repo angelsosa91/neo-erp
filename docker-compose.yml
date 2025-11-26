@@ -9,8 +9,12 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./bootstrap/cache:/var/www/html/bootstrap/cache
+      # Named volumes for persistent data
+      - storage-data:/var/www/html/storage/app/public
+      - logs-data:/var/www/html/storage/logs
+      # Bind mount for development (comment out in production)
+      # - ./storage:/var/www/html/storage
+      # - ./bootstrap/cache:/var/www/html/bootstrap/cache
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -72,7 +76,8 @@ services:
     working_dir: /var/www/html
     command: php artisan queue:work --tries=3 --max-time=3600
     volumes:
-      - ./storage:/var/www/html/storage
+      - storage-data:/var/www/html/storage/app/public
+      - logs-data:/var/www/html/storage/logs
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -103,7 +108,8 @@ services:
     working_dir: /var/www/html
     command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
     volumes:
-      - ./storage:/var/www/html/storage
+      - storage-data:/var/www/html/storage/app/public
+      - logs-data:/var/www/html/storage/logs
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -130,4 +136,8 @@ volumes:
   db-data:
     driver: local
   redis-data:
+    driver: local
+  storage-data:
+    driver: local
+  logs-data:
     driver: local

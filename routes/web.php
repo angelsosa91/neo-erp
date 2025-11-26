@@ -12,7 +12,6 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SettingController;
 use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\AccountReceivableController;
 use App\Http\Controllers\AccountPayableController;
@@ -154,9 +153,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
     Route::get('/reports/summary', [ReportController::class, 'summary'])->name('reports.summary');
 
-    // Configuración
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+    // Reportes Adicionales
+    Route::get('/reports/cash-flow', [ReportController::class, 'cashFlow'])->name('reports.cash-flow');
+    Route::get('/reports/aging-report', [ReportController::class, 'agingReport'])->name('reports.aging-report');
+    Route::get('/reports/top-products', [ReportController::class, 'topProducts'])->name('reports.top-products');
+    Route::get('/reports/profitability', [ReportController::class, 'profitability'])->name('reports.profitability');
+    Route::get('/reports/inventory-movements', [ReportController::class, 'inventoryMovements'])->name('reports.inventory-movements');
 
     // Configuración de Empresa
     Route::get('/settings/company', [\App\Http\Controllers\CompanySettingController::class, 'index'])->name('settings.company');

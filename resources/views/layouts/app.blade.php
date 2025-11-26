@@ -623,11 +623,6 @@
                             <i class="bi bi-percent"></i> Impuestos (IVA)
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.index') ? 'active' : '' }}">
-                            <i class="bi bi-sliders"></i> Configuración General
-                        </a>
-                    </li>
                 </ul>
             </li>
         </ul>
