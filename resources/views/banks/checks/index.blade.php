@@ -36,7 +36,7 @@
         </select>
     </span>
     <span style="margin-left: 10px;">
-        <input id="searchbox" class="easyui-searchbox" style="width: 250px"
+        <input id="searchbox" class="easyui-searchbox" style="width: 220px"
                data-options="prompt:'Buscar...',searcher:doSearch">
     </span>
 </div>

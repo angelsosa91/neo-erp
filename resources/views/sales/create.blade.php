@@ -20,14 +20,14 @@
         <form id="saleForm">
             @csrf
             <div class="row mb-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Fecha <span class="text-danger">*</span></label>
                     <input type="date" class="form-control" id="sale_date" name="sale_date"
                            value="{{ date('Y-m-d') }}" required>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label class="form-label">Cliente <span class="text-danger" id="customer_required" style="display:none;">*</span></label>
-                    <input id="customer_id" name="customer_id" style="width: 100%;">
+                    <input id="customer_id" name="customer_id" style="width: 100%;height:38px;">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Tipo de Venta <span class="text-danger">*</span></label>
@@ -40,10 +40,7 @@
                     <label class="form-label">Días de Crédito <span class="text-danger">*</span></label>
                     <input type="number" class="form-control" id="credit_days" name="credit_days" min="1" value="30">
                 </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-12">
+                <div class="col-md-2">
                     <label class="form-label">Forma de Pago</label>
                     <select class="form-select" id="payment_method" name="payment_method">
                         <option value="Efectivo">Efectivo</option>
@@ -56,9 +53,9 @@
 
             <!-- Agregar productos -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Agregar Producto</label>
-                    <input id="product_search" style="width: 100%;">
+                    <input id="product_search" style="width: 100%;height:38px;">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Cantidad</label>

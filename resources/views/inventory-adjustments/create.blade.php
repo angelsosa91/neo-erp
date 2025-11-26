@@ -49,7 +49,7 @@
             <div class="row mb-3">
                 <div class="col-md-8">
                     <label class="form-label">Agregar Producto</label>
-                    <input id="product_search" style="width: 100%;">
+                    <input id="product_search" style="width: 100%;height:38px;">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Cantidad</label>

@@ -30,7 +30,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Cliente <span class="text-danger">*</span></label>
-                    <input id="customer_search" style="width: 100%;">
+                    <input id="customer_search" style="width: 100%;height:38px;">
                 </div>
             </div>
 

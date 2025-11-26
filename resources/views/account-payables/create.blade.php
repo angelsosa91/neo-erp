@@ -30,7 +30,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Proveedor <span class="text-danger">*</span></label>
-                    <input id="supplier_search" style="width: 100%;">
+                    <input id="supplier_search" style="width: 100%;height:38px;">
                 </div>
             </div>
 
