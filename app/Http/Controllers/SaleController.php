@@ -10,6 +10,7 @@ use App\Models\AccountReceivable;
 use App\Models\CashRegister;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Services\AccountingIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -310,6 +311,10 @@ class SaleController extends Controller
                 $defaultAccount->updateBalance();
             }
 
+            // Crear asiento contable automático
+            $accountingService = new AccountingIntegrationService();
+            $accountingService->createSaleJournalEntry($sale);
+
             DB::commit();
 
             return response()->json([
@@ -391,6 +396,12 @@ class SaleController extends Controller
                         $bankTransaction->bankAccount->updateBalance();
                     }
                 }
+
+                // Reversar asiento contable si existe
+                if ($sale->journal_entry_id) {
+                    $accountingService = new AccountingIntegrationService();
+                    $accountingService->reverseSaleJournalEntry($sale);
+                }
             }
 
             $sale->status = 'cancelled';
@@ -435,7 +446,7 @@ class SaleController extends Controller
      */
     public function detail(Sale $sale)
     {
-        $sale->load(['customer', 'user', 'items.product', 'accountReceivable']);
+        $sale->load(['customer', 'user', 'items.product', 'accountReceivable', 'journalEntry']);
         return view('sales.detail', compact('sale'));
     }
 }

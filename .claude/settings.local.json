@@ -12,7 +12,10 @@
       "Bash(\"c:/xampp/php/php.exe\" artisan tinker:*)",
       "Bash(\"c:/xampp/php/php.exe\" artisan make:migration:*)",
       "Bash(\"c:/xampp/php/php.exe\" artisan db:seed:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:controller:*)"
+      "Bash(\"c:/xampp/php/php.exe\" artisan make:controller:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan:*)",
+      "Bash(\"c:/xampp/php/php.exe\" artisan make:model:*)",
+      "Bash(if not exist \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\" mkdir \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\")"
     ],
     "deny": [],
     "ask": []

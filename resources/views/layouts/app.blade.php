@@ -311,14 +311,34 @@
                     </li>
                 </ul>
             </li>
-            <li class="has-submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*') ? 'active' : '' }}">
                     <i class="bi bi-journal-text"></i> Contabilidad
                 </a>
-                <ul class="submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('account-chart.index') }}" class="{{ request()->routeIs('account-chart.*') ? 'active' : '' }}">
                             <i class="bi bi-diagram-3"></i> Plan de Cuentas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('journal-entries.index') }}" class="{{ request()->routeIs('journal-entries.*') ? 'active' : '' }}">
+                            <i class="bi bi-journal-bookmark"></i> Asientos Contables
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('general-ledger.index') }}" class="{{ request()->routeIs('general-ledger.*') ? 'active' : '' }}">
+                            <i class="bi bi-book"></i> Libro Mayor
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('trial-balance.index') }}" class="{{ request()->routeIs('trial-balance.*') ? 'active' : '' }}">
+                            <i class="bi bi-calculator"></i> Balance de Comprobación
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('accounting-settings.index') }}" class="{{ request()->routeIs('accounting-settings.*') ? 'active' : '' }}">
+                            <i class="bi bi-gear"></i> Configuración Contable
                         </a>
                     </li>
                 </ul>

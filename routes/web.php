@@ -23,6 +23,9 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CheckController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\AccountChartController;
+use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\GeneralLedgerController;
+use App\Http\Controllers\AccountingSettingController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -245,4 +248,28 @@ Route::middleware('auth')->group(function () {
     Route::get('/account-chart/{account}', [AccountChartController::class, 'show'])->name('account-chart.show');
     Route::put('/account-chart/{account}', [AccountChartController::class, 'update'])->name('account-chart.update');
     Route::delete('/account-chart/{account}', [AccountChartController::class, 'destroy'])->name('account-chart.destroy');
+
+    // Contabilidad - Asientos Contables
+    Route::get('/journal-entries', [JournalEntryController::class, 'index'])->name('journal-entries.index');
+    Route::get('/journal-entries/data', [JournalEntryController::class, 'data'])->name('journal-entries.data');
+    Route::get('/journal-entries/create', [JournalEntryController::class, 'create'])->name('journal-entries.create');
+    Route::post('/journal-entries', [JournalEntryController::class, 'store'])->name('journal-entries.store');
+    Route::get('/journal-entries/{entry}', [JournalEntryController::class, 'show'])->name('journal-entries.show');
+    Route::get('/journal-entries/{entry}/edit', [JournalEntryController::class, 'edit'])->name('journal-entries.edit');
+    Route::put('/journal-entries/{entry}', [JournalEntryController::class, 'update'])->name('journal-entries.update');
+    Route::delete('/journal-entries/{entry}', [JournalEntryController::class, 'destroy'])->name('journal-entries.destroy');
+    Route::post('/journal-entries/{entry}/post', [JournalEntryController::class, 'post'])->name('journal-entries.post');
+    Route::post('/journal-entries/{entry}/cancel', [JournalEntryController::class, 'cancel'])->name('journal-entries.cancel');
+
+    // Contabilidad - Reportes
+    Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
+    Route::get('/general-ledger/data', [GeneralLedgerController::class, 'data'])->name('general-ledger.data');
+    Route::get('/general-ledger/export', [GeneralLedgerController::class, 'exportGeneralLedger'])->name('general-ledger.export');
+    Route::get('/trial-balance', [GeneralLedgerController::class, 'trialBalance'])->name('trial-balance.index');
+    Route::get('/trial-balance/data', [GeneralLedgerController::class, 'trialBalanceData'])->name('trial-balance.data');
+    Route::get('/trial-balance/export', [GeneralLedgerController::class, 'exportTrialBalance'])->name('trial-balance.export');
+
+    // Contabilidad - Configuración
+    Route::get('/accounting-settings', [AccountingSettingController::class, 'index'])->name('accounting-settings.index');
+    Route::post('/accounting-settings', [AccountingSettingController::class, 'update'])->name('accounting-settings.update');
 });

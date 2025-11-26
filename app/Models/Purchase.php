@@ -24,6 +24,7 @@ class Purchase extends Model
         'iva_10',
         'total',
         'status',
+        'journal_entry_id',
         'payment_method',
         'payment_type',
         'credit_days',
@@ -60,6 +61,11 @@ class Purchase extends Model
     public function accountPayable()
     {
         return $this->hasOne(AccountPayable::class);
+    }
+
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     /**
@@ -117,5 +123,13 @@ class Purchase extends Model
         $this->total = $totals['exento'] + $totals['gravado_5'] + $totals['gravado_10'];
 
         return $this;
+    }
+
+    /**
+     * Obtener el total de IVA
+     */
+    public function getTotalIvaAttribute(): float
+    {
+        return $this->iva_5 + $this->iva_10;
     }
 }

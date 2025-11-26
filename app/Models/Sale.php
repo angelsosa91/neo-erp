@@ -24,6 +24,7 @@ class Sale extends Model
         'iva_10',
         'total',
         'status',
+        'journal_entry_id',
         'payment_method',
         'payment_type',
         'credit_days',
@@ -72,6 +73,14 @@ class Sale extends Model
     public function accountReceivable()
     {
         return $this->hasOne(AccountReceivable::class);
+    }
+
+    /**
+     * Relación con el asiento contable
+     */
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     /**

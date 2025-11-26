@@ -10,6 +10,7 @@ use App\Models\AccountPayable;
 use App\Models\CashRegister;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Services\AccountingIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -162,7 +163,7 @@ class PurchaseController extends Controller
 
     public function detail(Purchase $purchase)
     {
-        $purchase->load(['supplier', 'user', 'items.product', 'accountPayable']);
+        $purchase->load(['supplier', 'user', 'items.product', 'accountPayable', 'journalEntry']);
         return view('purchases.detail', compact('purchase'));
     }
 
@@ -275,6 +276,10 @@ class PurchaseController extends Controller
                 $defaultAccount->updateBalance();
             }
 
+            // Crear asiento contable automático
+            $accountingService = new AccountingIntegrationService();
+            $accountingService->createPurchaseJournalEntry($purchase);
+
             DB::commit();
 
             return response()->json([
@@ -352,6 +357,12 @@ class PurchaseController extends Controller
                         // Actualizar saldo de cuenta bancaria
                         $bankTransaction->bankAccount->updateBalance();
                     }
+                }
+
+                // Reversar asiento contable si existe
+                if ($purchase->journal_entry_id) {
+                    $accountingService = new AccountingIntegrationService();
+                    $accountingService->reversePurchaseJournalEntry($purchase);
                 }
             }
 

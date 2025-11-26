@@ -102,6 +102,18 @@
         </div>
         @endif
 
+        @if($sale->journal_entry_id)
+        <div class="alert alert-success mb-4">
+            <i class="bi bi-journal-text"></i>
+            <strong>Asiento Contable:</strong>
+            <a href="{{ route('journal-entries.show', $sale->journal_entry_id) }}" class="alert-link">
+                {{ $sale->journalEntry->entry_number }}
+            </a>
+            - Fecha: {{ \Carbon\Carbon::parse($sale->journalEntry->entry_date)->format('d/m/Y') }}
+            - Estado: <span class="badge bg-success">{{ $sale->journalEntry->status === 'posted' ? 'Publicado' : 'Borrador' }}</span>
+        </div>
+        @endif
+
         <div class="row mb-4">
             <div class="col-md-12">
                 <strong>Notas:</strong><br>
