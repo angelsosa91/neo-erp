@@ -7,6 +7,8 @@ use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\Sale;
 use App\Models\Purchase;
+use App\Models\AccountReceivablePayment;
+use App\Models\AccountPayablePayment;
 use Illuminate\Support\Facades\DB;
 
 class AccountingIntegrationService
@@ -441,5 +443,217 @@ class AccountingIntegrationService
         }
 
         return $description;
+    }
+
+    /**
+     * Crear asiento contable para un pago de cuenta por cobrar
+     */
+    public function createReceivablePaymentJournalEntry(AccountReceivablePayment $payment, int $tenantId): JournalEntry
+    {
+        // Validar que las cuentas necesarias estén configuradas
+        $this->validateReceivablePaymentAccounts($tenantId, $payment);
+
+        // Determinar cuenta de débito según método de pago
+        $debitAccountId = $this->getDebitAccountForPayment($tenantId, $payment->payment_method);
+
+        // Cuenta de crédito: Cuentas por Cobrar
+        $creditAccountId = AccountingSetting::getValue($tenantId, 'accounts_receivable');
+
+        DB::beginTransaction();
+        try {
+            $journalEntry = JournalEntry::create([
+                'tenant_id' => $tenantId,
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_date' => $payment->payment_date,
+                'reference' => $payment->payment_number,
+                'description' => 'Cobro ' . $payment->payment_number . ' - ' . $payment->accountReceivable->customer_name,
+                'status' => 'posted',
+                'created_by' => $payment->user_id,
+            ]);
+
+            // DÉBITO: Caja/Banco (entrada de dinero)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $debitAccountId,
+                'description' => 'Cobro ' . $payment->payment_number,
+                'debit' => $payment->amount,
+                'credit' => 0,
+            ]);
+
+            // CRÉDITO: Cuentas por Cobrar (disminuye el activo)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $creditAccountId,
+                'description' => 'Cobro ' . $payment->payment_number . ' - ' . $payment->accountReceivable->document_number,
+                'debit' => 0,
+                'credit' => $payment->amount,
+            ]);
+
+            // Actualizar saldos de cuentas
+            $journalEntry->updateAccountBalances();
+
+            // Vincular el asiento al pago
+            $payment->journal_entry_id = $journalEntry->id;
+            $payment->save();
+
+            DB::commit();
+
+            return $journalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Crear asiento contable para un pago de cuenta por pagar
+     */
+    public function createPayablePaymentJournalEntry(AccountPayablePayment $payment, int $tenantId): JournalEntry
+    {
+        // Validar que las cuentas necesarias estén configuradas
+        $this->validatePayablePaymentAccounts($tenantId, $payment);
+
+        // Determinar cuenta de crédito según método de pago
+        $creditAccountId = $this->getCreditAccountForPayment($tenantId, $payment->payment_method);
+
+        // Cuenta de débito: Cuentas por Pagar
+        $debitAccountId = AccountingSetting::getValue($tenantId, 'accounts_payable');
+
+        DB::beginTransaction();
+        try {
+            $journalEntry = JournalEntry::create([
+                'tenant_id' => $tenantId,
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_date' => $payment->payment_date,
+                'reference' => $payment->payment_number,
+                'description' => 'Pago ' . $payment->payment_number . ' - ' . $payment->accountPayable->supplier_name,
+                'status' => 'posted',
+                'created_by' => $payment->user_id,
+            ]);
+
+            // DÉBITO: Cuentas por Pagar (disminuye el pasivo)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $debitAccountId,
+                'description' => 'Pago ' . $payment->payment_number . ' - ' . $payment->accountPayable->document_number,
+                'debit' => $payment->amount,
+                'credit' => 0,
+            ]);
+
+            // CRÉDITO: Caja/Banco (salida de dinero)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $creditAccountId,
+                'description' => 'Pago ' . $payment->payment_number,
+                'debit' => 0,
+                'credit' => $payment->amount,
+            ]);
+
+            // Actualizar saldos de cuentas
+            $journalEntry->updateAccountBalances();
+
+            // Vincular el asiento al pago
+            $payment->journal_entry_id = $journalEntry->id;
+            $payment->save();
+
+            DB::commit();
+
+            return $journalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Validar cuentas para pagos de cuentas por cobrar
+     */
+    private function validateReceivablePaymentAccounts(int $tenantId, AccountReceivablePayment $payment): void
+    {
+        $errors = [];
+
+        if (!AccountingSetting::getValue($tenantId, 'accounts_receivable')) {
+            $errors[] = 'Cuenta de Cuentas por Cobrar';
+        }
+
+        if ($payment->payment_method === 'cash') {
+            if (!AccountingSetting::getValue($tenantId, 'cash')) {
+                $errors[] = 'Cuenta de Caja';
+            }
+        } elseif (in_array($payment->payment_method, ['card', 'transfer'])) {
+            if (!AccountingSetting::getValue($tenantId, 'bank_default')) {
+                $errors[] = 'Cuenta de Banco por Defecto';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(
+                'Debe configurar las siguientes cuentas contables antes de registrar el cobro: ' .
+                implode(', ', $errors) . '. ' .
+                'Vaya a Contabilidad > Configuración Contable para configurarlas.'
+            );
+        }
+    }
+
+    /**
+     * Validar cuentas para pagos de cuentas por pagar
+     */
+    private function validatePayablePaymentAccounts(int $tenantId, AccountPayablePayment $payment): void
+    {
+        $errors = [];
+
+        if (!AccountingSetting::getValue($tenantId, 'accounts_payable')) {
+            $errors[] = 'Cuenta de Cuentas por Pagar';
+        }
+
+        if ($payment->payment_method === 'cash') {
+            if (!AccountingSetting::getValue($tenantId, 'cash')) {
+                $errors[] = 'Cuenta de Caja';
+            }
+        } elseif (in_array($payment->payment_method, ['card', 'transfer'])) {
+            if (!AccountingSetting::getValue($tenantId, 'bank_default')) {
+                $errors[] = 'Cuenta de Banco por Defecto';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(
+                'Debe configurar las siguientes cuentas contables antes de registrar el pago: ' .
+                implode(', ', $errors) . '. ' .
+                'Vaya a Contabilidad > Configuración Contable para configurarlas.'
+            );
+        }
+    }
+
+    /**
+     * Obtener cuenta de débito para pagos recibidos
+     */
+    private function getDebitAccountForPayment(int $tenantId, string $paymentMethod): int
+    {
+        if ($paymentMethod === 'cash') {
+            return AccountingSetting::getValue($tenantId, 'cash');
+        } elseif (in_array($paymentMethod, ['card', 'transfer'])) {
+            return AccountingSetting::getValue($tenantId, 'bank_default');
+        }
+
+        // Por defecto, caja
+        return AccountingSetting::getValue($tenantId, 'cash');
+    }
+
+    /**
+     * Obtener cuenta de crédito para pagos realizados
+     */
+    private function getCreditAccountForPayment(int $tenantId, string $paymentMethod): int
+    {
+        if ($paymentMethod === 'cash') {
+            return AccountingSetting::getValue($tenantId, 'cash');
+        } elseif (in_array($paymentMethod, ['card', 'transfer'])) {
+            return AccountingSetting::getValue($tenantId, 'bank_default');
+        }
+
+        // Por defecto, caja
+        return AccountingSetting::getValue($tenantId, 'cash');
     }
 }

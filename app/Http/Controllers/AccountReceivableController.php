@@ -8,6 +8,7 @@ use App\Models\CashRegister;
 use App\Models\Customer;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Services\AccountingIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -198,6 +199,11 @@ class AccountReceivableController extends Controller
                 // Actualizar saldo de cuenta bancaria
                 $defaultAccount->updateBalance();
             }
+
+            // Crear asiento contable automático
+            $accountingService = new AccountingIntegrationService();
+            $payment->load('accountReceivable');
+            $accountingService->createReceivablePaymentJournalEntry($payment, Auth::user()->tenant_id);
 
             DB::commit();
 

@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('account_receivable_payments', function (Blueprint $table) {
-            //
+            $table->unsignedBigInteger('journal_entry_id')->nullable()->after('user_id');
+            $table->foreign('journal_entry_id')->references('id')->on('journal_entries')->onDelete('set null');
         });
     }
 
@@ -22,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('account_receivable_payments', function (Blueprint $table) {
-            //
+            $table->dropForeign(['journal_entry_id']);
+            $table->dropColumn('journal_entry_id');
         });
     }
 };

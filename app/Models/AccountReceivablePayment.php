@@ -15,6 +15,7 @@ class AccountReceivablePayment extends Model
         'reference',
         'notes',
         'user_id',
+        'journal_entry_id',
     ];
 
     protected $casts = [
@@ -30,6 +31,11 @@ class AccountReceivablePayment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     public static function generatePaymentNumber($accountReceivableId)

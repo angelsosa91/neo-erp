@@ -8,6 +8,7 @@ use App\Models\CashRegister;
 use App\Models\Supplier;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Services\AccountingIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -210,6 +211,11 @@ class AccountPayableController extends Controller
                 // Actualizar saldo de cuenta bancaria
                 $defaultAccount->updateBalance();
             }
+
+            // Crear asiento contable automático
+            $accountingService = new AccountingIntegrationService();
+            $payment->load('accountPayable');
+            $accountingService->createPayablePaymentJournalEntry($payment, Auth::user()->tenant_id);
 
             DB::commit();
 

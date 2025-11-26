@@ -337,6 +337,16 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('accounting.balance-sheet') }}" class="{{ request()->routeIs('accounting.balance-sheet') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-bar-graph"></i> Balance General
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('accounting.income-statement') }}" class="{{ request()->routeIs('accounting.income-statement') ? 'active' : '' }}">
+                            <i class="bi bi-graph-up"></i> Estado de Resultados
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('accounting-settings.index') }}" class="{{ request()->routeIs('accounting-settings.*') ? 'active' : '' }}">
                             <i class="bi bi-gear"></i> Configuración Contable
                         </a>

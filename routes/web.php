@@ -26,6 +26,7 @@ use App\Http\Controllers\AccountChartController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\AccountingSettingController;
+use App\Http\Controllers\FinancialStatementController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -272,4 +273,8 @@ Route::middleware('auth')->group(function () {
     // Contabilidad - Configuración
     Route::get('/accounting-settings', [AccountingSettingController::class, 'index'])->name('accounting-settings.index');
     Route::post('/accounting-settings', [AccountingSettingController::class, 'update'])->name('accounting-settings.update');
+
+    // Estados Financieros
+    Route::get('/accounting/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('accounting.balance-sheet');
+    Route::get('/accounting/income-statement', [FinancialStatementController::class, 'incomeStatement'])->name('accounting.income-statement');
 });

@@ -9,7 +9,7 @@
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-tip" onclick="viewDetail()">Ver Detalle</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" onclick="editAccount()">Editar</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="toggleStatus()">Activar/Desactivar</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-star" onclick="setAsDefault()">Establecer Predeterminada</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-lock" onclick="setAsDefault()">Establecer Predeterminada</a>
     <span style="margin-left: 20px;">
         <select id="status_filter" class="easyui-combobox" style="width: 150px;" data-options="
             panelHeight: 'auto',
