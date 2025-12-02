@@ -4,6 +4,42 @@ set -e
 
 echo "Starting Neo ERP application..."
 
+# Create .env file from environment variables
+echo "Creating .env file from environment variables..."
+cat > /var/www/html/.env << EOF
+APP_NAME="${APP_NAME:-Neo ERP}"
+APP_ENV=${APP_ENV:-production}
+APP_KEY=${APP_KEY}
+APP_DEBUG=${APP_DEBUG:-false}
+APP_URL=${APP_URL:-http://localhost}
+
+LOG_CHANNEL=${LOG_CHANNEL:-stack}
+LOG_LEVEL=${LOG_LEVEL:-error}
+
+DB_CONNECTION=${DB_CONNECTION:-mysql}
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT:-3306}
+DB_DATABASE=${DB_DATABASE}
+DB_USERNAME=${DB_USERNAME}
+DB_PASSWORD=${DB_PASSWORD}
+
+BROADCAST_CONNECTION=${BROADCAST_CONNECTION:-log}
+CACHE_DRIVER=${CACHE_DRIVER:-redis}
+FILESYSTEM_DISK=${FILESYSTEM_DISK:-local}
+QUEUE_CONNECTION=${QUEUE_CONNECTION:-redis}
+SESSION_DRIVER=${SESSION_DRIVER:-redis}
+SESSION_LIFETIME=${SESSION_LIFETIME:-120}
+
+REDIS_HOST=${REDIS_HOST:-redis}
+REDIS_PASSWORD=${REDIS_PASSWORD:-null}
+REDIS_PORT=${REDIS_PORT:-6379}
+EOF
+
+chown www-data:www-data /var/www/html/.env
+chmod 644 /var/www/html/.env
+
+echo ".env file created successfully"
+
 # Wait for database to be ready
 echo "Waiting for database connection..."
 until php artisan db:show > /dev/null 2>&1; do
