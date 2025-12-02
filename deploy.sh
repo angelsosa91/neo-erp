@@ -25,11 +25,11 @@ fi
 source .env
 
 echo "1. Construyendo imágenes Docker..."
-docker-compose build --no-cache
+docker compose build --no-cache
 
 echo ""
 echo "2. Iniciando contenedores..."
-docker-compose up -d
+docker compose up -d
 
 echo ""
 echo "3. Esperando que la base de datos esté lista..."
@@ -38,25 +38,25 @@ sleep 10
 echo ""
 echo "4. Generando APP_KEY si no existe..."
 if [ -z "$APP_KEY" ] || [ "$APP_KEY" == "" ]; then
-    docker-compose exec app php artisan key:generate --force
+    docker compose exec app php artisan key:generate --force
 fi
 
 echo ""
 echo "5. Ejecutando migraciones..."
-docker-compose exec app php artisan migrate --force
+docker compose exec app php artisan migrate --force
 
 echo ""
 echo "6. Ejecutando seeders (primera vez)..."
 read -p "¿Deseas ejecutar los seeders? (s/N): " run_seeders
 if [ "$run_seeders" == "s" ] || [ "$run_seeders" == "S" ]; then
-    docker-compose exec app php artisan db:seed --force
+    docker compose exec app php artisan db:seed --force
 fi
 
 echo ""
 echo "7. Optimizando aplicación..."
-docker-compose exec app php artisan config:cache
-docker-compose exec app php artisan route:cache
-docker-compose exec app php artisan view:cache
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan route:cache
+docker compose exec app php artisan view:cache
 
 echo ""
 echo "======================================"
