@@ -25,7 +25,7 @@ echo ""
 #source .env
 
 echo "1. Construyendo imágenes Docker..."
-docker compose build # --no-cache
+docker compose build --no-cache
 
 echo ""
 echo "2. Iniciando contenedores..."
