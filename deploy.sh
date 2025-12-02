@@ -32,8 +32,8 @@ echo "2. Iniciando contenedores..."
 docker compose up -d
 
 echo ""
-echo "3. Esperando que la base de datos esté lista..."
-sleep 10
+echo "3. Verificando conexión a base de datos externa..."
+# No necesitamos esperar ya que la BD es externa y ya debe estar disponible
 
 echo ""
 echo "4. Generando APP_KEY si no existe..."
