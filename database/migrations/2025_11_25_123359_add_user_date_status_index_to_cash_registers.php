@@ -12,7 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cash_registers', function (Blueprint $table) {
-            $table->index(['user_id', 'register_date', 'status']);
+            // Check if index already exists
+            $indexName = 'cash_registers_user_id_register_date_status_index';
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $doctrineTable = $sm->introspectTable('cash_registers');
+
+            if (!$doctrineTable->hasIndex($indexName)) {
+                $table->index(['user_id', 'register_date', 'status']);
+            }
         });
     }
 
@@ -22,7 +29,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('cash_registers', function (Blueprint $table) {
-            $table->dropIndex(['user_id', 'register_date', 'status']);
+            $indexName = 'cash_registers_user_id_register_date_status_index';
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $doctrineTable = $sm->introspectTable('cash_registers');
+
+            if ($doctrineTable->hasIndex($indexName)) {
+                $table->dropIndex(['user_id', 'register_date', 'status']);
+            }
         });
     }
 };
