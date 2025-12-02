@@ -8,21 +8,21 @@ echo "======================================"
 echo ""
 
 # Check if .env exists
-if [ ! -f .env ]; then
-    echo "Archivo .env no encontrado. Copiando .env.docker..."
-    cp .env.docker .env
-    echo ""
-    echo "IMPORTANTE: Edita el archivo .env y configura:"
-    echo "  - APP_KEY (se puede generar con: php artisan key:generate)"
-    echo "  - DB_PASSWORD"
-    echo "  - DB_ROOT_PASSWORD"
-    echo "  - Otras configuraciones según tu entorno"
-    echo ""
-    read -p "Presiona Enter cuando hayas configurado .env..."
-fi
+#if [ ! -f .env ]; then
+#    echo "Archivo .env no encontrado. Copiando .env.docker..."
+#    cp .env.docker .env
+#    echo ""
+#    echo "IMPORTANTE: Edita el archivo .env y configura:"
+#    echo "  - APP_KEY (se puede generar con: php artisan key:generate)"
+#    echo "  - DB_PASSWORD"
+#    echo "  - DB_ROOT_PASSWORD"
+#    echo "  - Otras configuraciones según tu entorno"
+#    echo ""
+#    read -p "Presiona Enter cuando hayas configurado .env..."
+#fi
 
 # Load environment variables
-source .env
+#source .env
 
 echo "1. Construyendo imágenes Docker..."
 docker compose build --no-cache
