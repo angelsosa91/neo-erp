@@ -69,7 +69,7 @@ class ExpenseCategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
-            'account_id' => 'nullable|exists:account_charts,id',
+            'account_id' => 'nullable|exists:account_chart,id',
             'is_active' => 'boolean',
         ]);
 
@@ -99,7 +99,7 @@ class ExpenseCategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
-            'account_id' => 'nullable|exists:account_charts,id',
+            'account_id' => 'nullable|exists:account_chart,id',
             'is_active' => 'boolean',
         ]);
 
