@@ -48,7 +48,7 @@ class AccountingIntegrationService
                 'reference' => $sale->sale_number,
                 'description' => $this->getSaleDescription($sale),
                 'status' => 'posted',
-                'created_by' => $sale->user_id,
+                'user_id' => $sale->user_id,
             ]);
 
             // Calcular subtotal sin IVA
@@ -127,7 +127,7 @@ class AccountingIntegrationService
                 'reference' => $sale->sale_number . ' (Anulación)',
                 'description' => 'Anulación de venta ' . $sale->sale_number,
                 'status' => 'posted',
-                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
             ]);
 
             // Crear líneas inversas (intercambiar débito y crédito)
@@ -270,7 +270,7 @@ class AccountingIntegrationService
                 'reference' => $purchase->purchase_number,
                 'description' => $this->getPurchaseDescription($purchase),
                 'status' => 'posted',
-                'created_by' => $purchase->user_id,
+                'user_id' => $purchase->user_id,
             ]);
 
             // Calcular subtotal sin IVA
@@ -349,7 +349,7 @@ class AccountingIntegrationService
                 'reference' => $purchase->purchase_number . ' (Anulación)',
                 'description' => 'Anulación de compra ' . $purchase->purchase_number,
                 'status' => 'posted',
-                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
             ]);
 
             // Crear líneas inversas (intercambiar débito y crédito)
@@ -483,7 +483,7 @@ class AccountingIntegrationService
                 'reference' => $payment->payment_number,
                 'description' => 'Cobro ' . $payment->payment_number . ' - ' . $payment->accountReceivable->customer_name,
                 'status' => 'posted',
-                'created_by' => $payment->user_id,
+                'user_id' => $payment->user_id,
             ]);
 
             // DÉBITO: Caja/Banco (entrada de dinero)
@@ -547,7 +547,7 @@ class AccountingIntegrationService
                 'reference' => $payment->payment_number,
                 'description' => 'Pago ' . $payment->payment_number . ' - ' . $payment->accountPayable->supplier_name,
                 'status' => 'posted',
-                'created_by' => $payment->user_id,
+                'user_id' => $payment->user_id,
             ]);
 
             // DÉBITO: Cuentas por Pagar (disminuye el pasivo)
