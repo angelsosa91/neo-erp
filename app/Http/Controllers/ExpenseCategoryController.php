@@ -21,7 +21,7 @@ class ExpenseCategoryController extends Controller
         $order = $request->get('order', 'desc');
         $search = $request->get('search', '');
 
-        $query = ExpenseCategory::query()
+        $query = ExpenseCategory::with('account')
             ->when($search, function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             })
@@ -35,6 +35,8 @@ class ExpenseCategoryController extends Controller
                 'id' => $category->id,
                 'name' => $category->name,
                 'description' => $category->description,
+                'account_id' => $category->account_id,
+                'account_name' => $category->account ? $category->account->code . ' - ' . $category->account->name : 'Sin cuenta',
                 'expenses_count' => $category->expenses()->count(),
                 'is_active' => $category->is_active,
             ];
@@ -67,6 +69,7 @@ class ExpenseCategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
+            'account_id' => 'nullable|exists:account_charts,id',
             'is_active' => 'boolean',
         ]);
 
@@ -96,6 +99,7 @@ class ExpenseCategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'description' => 'nullable|string|max:255',
+            'account_id' => 'nullable|exists:account_charts,id',
             'is_active' => 'boolean',
         ]);
 

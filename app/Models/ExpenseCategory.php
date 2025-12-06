@@ -14,6 +14,7 @@ class ExpenseCategory extends Model
         'tenant_id',
         'name',
         'description',
+        'account_id',
         'is_active',
     ];
 
@@ -24,5 +25,10 @@ class ExpenseCategory extends Model
     public function expenses()
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(AccountChart::class, 'account_id');
     }
 }

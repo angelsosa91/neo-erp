@@ -36,9 +36,10 @@
             <thead>
                 <tr>
                     <th data-options="field:'id',width:60,sortable:true">ID</th>
-                    <th data-options="field:'name',width:200,sortable:true">Nombre</th>
-                    <th data-options="field:'description',width:300">Descripción</th>
-                    <th data-options="field:'expenses_count',width:100,align:'center'">Gastos</th>
+                    <th data-options="field:'name',width:150,sortable:true">Nombre</th>
+                    <th data-options="field:'description',width:200">Descripción</th>
+                    <th data-options="field:'account_name',width:200">Cuenta Contable</th>
+                    <th data-options="field:'expenses_count',width:80,align:'center'">Gastos</th>
                     <th data-options="field:'is_active',width:80,align:'center',formatter:formatStatus">Estado</th>
                 </tr>
             </thead>
@@ -59,6 +60,26 @@
         <div class="mb-3">
             <label class="form-label">Descripción</label>
             <input class="easyui-textbox" name="description" id="category-description" style="width:100%" data-options="multiline:true,height:80">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cuenta Contable del Plan de Cuentas <span class="text-danger">*</span></label>
+            <select class="easyui-combobox" name="account_id" id="category-account" style="width:100%"
+                data-options="
+                    url:'{{ route('account-chart.list') }}?type=expense',
+                    method:'get',
+                    valueField:'id',
+                    textField:'full_name',
+                    required:true,
+                    editable:true,
+                    panelHeight:'300px',
+                    filter: function(q, row){
+                        var opts = $(this).combobox('options');
+                        return row[opts.textField].toLowerCase().indexOf(q.toLowerCase()) >= 0;
+                    }
+                ">
+            </select>
+            <small class="text-muted">Esta cuenta se debitará cuando se registre un gasto de esta categoría</small>
         </div>
 
         <div class="mb-3">
@@ -108,6 +129,7 @@ function editCategory() {
             $('#category-id').val(data.id);
             $('#category-name').textbox('setValue', data.name);
             $('#category-description').textbox('setValue', data.description || '');
+            $('#category-account').combobox('setValue', data.account_id);
             $('#category-active').prop('checked', data.is_active);
         });
     } else {
@@ -123,6 +145,7 @@ function saveCategory() {
     var formData = {
         name: $('#category-name').textbox('getValue'),
         description: $('#category-description').textbox('getValue'),
+        account_id: $('#category-account').combobox('getValue'),
         is_active: $('#category-active').is(':checked') ? 1 : 0
     };
 
