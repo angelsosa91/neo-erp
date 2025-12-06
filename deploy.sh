@@ -54,7 +54,8 @@ fi
 
 echo ""
 echo "7. Optimizando aplicación..."
-docker compose exec app php artisan config:cache
+docker compose exec app php artisan config:clear
+docker compose exec app php artisan cache:clear
 docker compose exec app php artisan route:cache
 docker compose exec app php artisan view:cache
 
