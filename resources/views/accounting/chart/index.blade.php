@@ -6,7 +6,7 @@
 @section('content')
 <div id="toolbar" style="padding: 10px;">
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" onclick="newAccount()">Nueva Cuenta</a>
-    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add-child" onclick="newSubAccount()">Nueva Subcuenta</a>
+    <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" onclick="newSubAccount()">Nueva Subcuenta</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" onclick="editAccount()">Editar</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" onclick="deleteAccount()">Eliminar</a>
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-reload" onclick="$('#tg').treegrid('reload')">Recargar</a>

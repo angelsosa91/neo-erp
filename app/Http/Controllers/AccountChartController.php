@@ -114,7 +114,7 @@ class AccountChartController extends Controller
             'name' => 'required|string|max:255',
             'account_type' => 'required|in:asset,liability,equity,income,expense',
             'nature' => 'required|in:debit,credit',
-            'is_detail' => 'boolean',
+            'is_detail' => 'required|string',
         ]);
 
         // Determinar el nivel
@@ -133,7 +133,7 @@ class AccountChartController extends Controller
             'account_type' => $request->account_type,
             'nature' => $request->nature,
             'level' => $level,
-            'is_detail' => $request->is_detail ?? false,
+            'is_detail' => $request->is_detail === 'true' ?? false,
             'is_active' => true,
             'opening_balance' => $request->opening_balance ?? 0,
             'current_balance' => $request->opening_balance ?? 0,
