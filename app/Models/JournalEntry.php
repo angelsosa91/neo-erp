@@ -110,6 +110,19 @@ class JournalEntry extends Model
     }
 
     /**
+     * Actualizar saldos de las cuentas afectadas por este asiento
+     */
+    public function updateAccountBalances(): void
+    {
+        foreach ($this->lines as $line) {
+            $account = $line->account;
+            if ($account) {
+                $account->updateBalance();
+            }
+        }
+    }
+
+    /**
      * Contabilizar el asiento (cambiar estado a posted)
      */
     public function post(): bool
