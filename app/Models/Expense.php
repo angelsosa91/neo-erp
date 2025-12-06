@@ -17,6 +17,7 @@ class Expense extends Model
         'expense_category_id',
         'supplier_id',
         'user_id',
+        'journal_entry_id',
         'document_number',
         'description',
         'amount',
@@ -46,6 +47,11 @@ class Expense extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     /**

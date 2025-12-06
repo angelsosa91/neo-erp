@@ -674,4 +674,220 @@ class AccountingIntegrationService
         // Por defecto, caja
         return AccountingSetting::getValue($tenantId, 'cash');
     }
+
+    /**
+     * Crear asiento contable para un gasto
+     */
+    public function createExpenseJournalEntry(\App\Models\Expense $expense): JournalEntry
+    {
+        $tenantId = $expense->tenant_id;
+
+        // Validar que las cuentas necesarias estén configuradas
+        $this->validateExpenseAccounts($tenantId, $expense);
+
+        // Determinar cuenta de crédito según método de pago
+        $creditAccountId = $this->getCreditAccountForExpense($tenantId, $expense);
+
+        // Obtener cuenta de gastos desde la categoría
+        if (!$expense->category || !$expense->category->account_id) {
+            throw new \Exception('La categoría del gasto no tiene cuenta contable asociada. Configure la cuenta en Gastos > Categorías.');
+        }
+        $debitAccountId = $expense->category->account_id;
+
+        // Obtener cuenta de IVA compras si hay IVA
+        $taxAccountId = null;
+        if ($expense->tax_amount > 0) {
+            $taxAccountId = AccountingSetting::getValue($tenantId, 'purchases_tax');
+        }
+
+        // Crear el asiento contable
+        DB::beginTransaction();
+        try {
+            $period = date('Y-m', strtotime($expense->expense_date));
+
+            $journalEntry = JournalEntry::create([
+                'tenant_id' => $tenantId,
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
+                'entry_date' => $expense->expense_date,
+                'period' => $period,
+                'reference' => $expense->expense_number,
+                'description' => $this->getExpenseDescription($expense),
+                'status' => 'posted',
+                'user_id' => $expense->user_id,
+            ]);
+
+            // Calcular monto sin IVA
+            $amountWithoutTax = $expense->amount - $expense->tax_amount;
+
+            // Línea de débito: Gasto (cuenta de la categoría)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $debitAccountId,
+                'description' => $expense->description,
+                'debit' => $amountWithoutTax,
+                'credit' => 0,
+            ]);
+
+            // Si hay IVA, agregar línea de débito para IVA Crédito Fiscal
+            if ($expense->tax_amount > 0 && $taxAccountId) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_id' => $taxAccountId,
+                    'description' => 'IVA ' . $expense->tax_rate . '% - ' . $expense->expense_number,
+                    'debit' => $expense->tax_amount,
+                    'credit' => 0,
+                ]);
+            }
+
+            // Línea de crédito: Caja/Banco
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $creditAccountId,
+                'description' => $this->getExpenseDescription($expense),
+                'debit' => 0,
+                'credit' => $expense->amount,
+            ]);
+
+            // Actualizar saldos de cuentas
+            $journalEntry->updateAccountBalances();
+
+            // Vincular el asiento al gasto
+            $expense->journal_entry_id = $journalEntry->id;
+            $expense->save();
+
+            DB::commit();
+
+            return $journalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Reversar asiento contable de un gasto anulado
+     */
+    public function reverseExpenseJournalEntry(\App\Models\Expense $expense): ?JournalEntry
+    {
+        if (!$expense->journal_entry_id) {
+            return null;
+        }
+
+        $originalEntry = JournalEntry::find($expense->journal_entry_id);
+        if (!$originalEntry) {
+            return null;
+        }
+
+        DB::beginTransaction();
+        try {
+            // Crear asiento de reversa
+            $period = date('Y-m');
+
+            $reversalEntry = JournalEntry::create([
+                'tenant_id' => $expense->tenant_id,
+                'entry_number' => JournalEntry::generateEntryNumber($expense->tenant_id, $period),
+                'entry_date' => now()->toDateString(),
+                'period' => $period,
+                'reference' => $expense->expense_number . ' (Anulación)',
+                'description' => 'Anulación de gasto ' . $expense->expense_number,
+                'status' => 'posted',
+                'user_id' => auth()->id(),
+            ]);
+
+            // Crear líneas inversas (intercambiar débito y crédito)
+            foreach ($originalEntry->lines as $line) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $reversalEntry->id,
+                    'account_id' => $line->account_id,
+                    'description' => 'Reversa: ' . $line->description,
+                    'debit' => $line->credit,  // Invertir
+                    'credit' => $line->debit,  // Invertir
+                ]);
+            }
+
+            // Actualizar saldos de cuentas
+            $reversalEntry->updateAccountBalances();
+
+            DB::commit();
+
+            return $reversalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Validar que las cuentas necesarias para gastos estén configuradas
+     */
+    private function validateExpenseAccounts(int $tenantId, \App\Models\Expense $expense): void
+    {
+        $errors = [];
+
+        // Validar que la categoría tenga cuenta asignada
+        if (!$expense->category || !$expense->category->account_id) {
+            $errors[] = 'Cuenta de Gasto (asignada a la categoría)';
+        }
+
+        // Validar cuenta según método de pago
+        if ($expense->payment_method === 'cash') {
+            if (!AccountingSetting::getValue($tenantId, 'cash')) {
+                $errors[] = 'Cuenta de Caja';
+            }
+        } elseif (in_array($expense->payment_method, ['card', 'transfer', 'debit'])) {
+            if (!AccountingSetting::getValue($tenantId, 'bank_default')) {
+                $errors[] = 'Cuenta de Banco por Defecto';
+            }
+        }
+
+        // Validar cuenta de IVA si hay IVA
+        if ($expense->tax_amount > 0) {
+            if (!AccountingSetting::getValue($tenantId, 'purchases_tax')) {
+                $errors[] = 'Cuenta de IVA Compras (Crédito Fiscal)';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(
+                'Debe configurar las siguientes cuentas contables antes de pagar el gasto: ' .
+                implode(', ', $errors) . '. ' .
+                'Vaya a Contabilidad > Configuración Contable para configurarlas.'
+            );
+        }
+    }
+
+    /**
+     * Obtener la cuenta de crédito según el método de pago del gasto
+     */
+    private function getCreditAccountForExpense(int $tenantId, \App\Models\Expense $expense): int
+    {
+        if ($expense->payment_method === 'cash') {
+            return AccountingSetting::getValue($tenantId, 'cash');
+        } elseif (in_array($expense->payment_method, ['card', 'transfer', 'debit'])) {
+            return AccountingSetting::getValue($tenantId, 'bank_default');
+        }
+
+        // Por defecto, usar caja
+        return AccountingSetting::getValue($tenantId, 'cash');
+    }
+
+    /**
+     * Obtener descripción del asiento de gasto
+     */
+    private function getExpenseDescription(\App\Models\Expense $expense): string
+    {
+        $description = 'Gasto ' . $expense->expense_number;
+
+        if ($expense->supplier) {
+            $description .= ' - ' . $expense->supplier->name;
+        }
+
+        if ($expense->category) {
+            $description .= ' (' . $expense->category->name . ')';
+        }
+
+        return $description;
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
+use App\Services\AccountingIntegrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -156,13 +157,27 @@ class ExpenseController extends Controller
             ], 422);
         }
 
-        $expense->status = 'paid';
-        $expense->save();
+        try {
+            // Cargar relaciones necesarias
+            $expense->load('category', 'supplier');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Gasto marcado como pagado',
-        ]);
+            // Crear asiento contable
+            $accountingService = new AccountingIntegrationService();
+            $accountingService->createExpenseJournalEntry($expense);
+
+            // Marcar como pagado
+            $expense->status = 'paid';
+            $expense->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gasto marcado como pagado y asiento contable generado',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'errors' => ['general' => [$e->getMessage()]],
+            ], 422);
+        }
     }
 
     public function cancel(Expense $expense)
@@ -173,13 +188,26 @@ class ExpenseController extends Controller
             ], 422);
         }
 
-        $expense->status = 'cancelled';
-        $expense->save();
+        try {
+            // Si tenía asiento contable, reversarlo
+            if ($expense->journal_entry_id) {
+                $accountingService = new AccountingIntegrationService();
+                $accountingService->reverseExpenseJournalEntry($expense);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Gasto anulado exitosamente',
-        ]);
+            // Marcar como anulado
+            $expense->status = 'cancelled';
+            $expense->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gasto anulado exitosamente' . ($expense->journal_entry_id ? ' y asiento contable reversado' : ''),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'errors' => ['general' => [$e->getMessage()]],
+            ], 422);
+        }
     }
 
     public function destroy(Expense $expense)
