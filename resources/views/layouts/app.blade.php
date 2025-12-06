@@ -283,10 +283,54 @@
             font-weight: 600;
         }
 
+        /* Mobile Hamburger Button */
+        .mobile-menu-toggle {
+            display: none;
+            background: var(--accent-color);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Mobile Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .sidebar-overlay.show {
+            opacity: 1;
+        }
+
         /* Mobile responsive */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.3);
             }
 
             .sidebar.mobile-open {
@@ -294,7 +338,62 @@
             }
 
             .main-content {
+                margin-left: 0 !important;
+            }
+
+            .main-content.expanded {
                 margin-left: 0;
+            }
+
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .sidebar-overlay {
+                display: block;
+            }
+
+            /* Desactivar toggle desktop en móvil */
+            .toggle-sidebar {
+                display: none;
+            }
+
+            /* Áreas de toque más grandes en móvil */
+            .nav-menu li a {
+                padding: 16px 20px;
+                font-size: 16px;
+            }
+
+            .submenu li a {
+                padding: 14px 20px 14px 56px;
+            }
+
+            .top-navbar {
+                padding: 12px 15px;
+            }
+
+            .top-navbar h5 {
+                font-size: 1rem;
+            }
+
+            /* Ocultar nombre de usuario en móviles pequeños */
+            @media (max-width: 480px) {
+                .top-navbar .me-3 {
+                    display: none;
+                }
+            }
+        }
+
+        /* Tablet responsive */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            :root {
+                --sidebar-width: 240px;
+                --sidebar-collapsed-width: 65px;
+            }
+
+            .nav-menu li a {
+                padding: 10px 15px;
+                font-size: 14px;
             }
         }
     </style>
@@ -302,6 +401,9 @@
     @stack('styles')
 </head>
 <body>
+    <!-- Sidebar Overlay (for mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="brand">
@@ -663,7 +765,10 @@
     <div class="main-content">
         <!-- Top Navbar -->
         <div class="top-navbar">
-            <div>
+            <div class="d-flex align-items-center">
+                <button class="mobile-menu-toggle me-3" onclick="toggleMobileSidebar()" aria-label="Menú">
+                    <i class="bi bi-list"></i>
+                </button>
                 <h5 class="mb-0">@yield('page-title', 'Dashboard')</h5>
             </div>
             <div class="d-flex align-items-center">
@@ -767,6 +872,82 @@
                 toggleIcon.classList.remove('bi-list');
                 toggleIcon.classList.add('bi-chevron-right');
             }
+        });
+
+        // Mobile sidebar functions
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (sidebar.classList.contains('mobile-open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        }
+
+        function openMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.add('mobile-open');
+            overlay.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = ''; // Restaurar scroll
+        }
+
+        // Cerrar menú al hacer clic en un enlace (solo móvil)
+        $(document).ready(function() {
+            if (window.innerWidth <= 768) {
+                $('.sidebar .nav-menu a').on('click', function(e) {
+                    // Solo cerrar si no es un submenu toggle
+                    if (!$(this).parent().hasClass('has-submenu') || $(this).find('i.chevron').length === 0) {
+                        setTimeout(closeMobileSidebar, 300);
+                    }
+                });
+            }
+        });
+
+        // Swipe gesture para cerrar menú (táctil)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.getElementById('sidebar').addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.getElementById('sidebar').addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 100;
+            const diff = touchStartX - touchEndX;
+
+            // Swipe hacia la izquierda para cerrar
+            if (diff > swipeThreshold && window.innerWidth <= 768) {
+                closeMobileSidebar();
+            }
+        }
+
+        // Detectar cambio de tamaño de pantalla
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (window.innerWidth > 768) {
+                    closeMobileSidebar(); // Cerrar menú móvil al cambiar a escritorio
+                }
+            }, 250);
         });
     </script>
     
