@@ -17,7 +17,7 @@ return new class extends Migration
                 $table->foreignId('account_id')
                     ->nullable()
                     ->after('description')
-                    ->constrained('account_charts')
+                    ->constrained('account_chart')
                     ->nullOnDelete();
             }
         });
