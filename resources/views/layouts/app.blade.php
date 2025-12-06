@@ -18,9 +18,9 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- jEasyUI CSS -->
-    <link rel="stylesheet" type="text/css" href="https://www.jeasyui.com/easyui/themes/default/easyui.css">
-    <link rel="stylesheet" type="text/css" href="https://www.jeasyui.com/easyui/themes/icon.css">
+    <!-- jEasyUI CSS (local) -->
+    <link rel="stylesheet" type="text/css" href="{{ asset('vendor/easyui/themes/default/easyui.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('vendor/easyui/themes/icon.css') }}">
     
     <style>
         :root {
@@ -709,15 +709,15 @@
         </div>
     </div>
     
-    <!-- jQuery (required by jEasyUI) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    
+    <!-- jQuery (required by jEasyUI) - local -->
+    <script src="{{ asset('vendor/jquery/jquery-3.7.1.min.js') }}"></script>
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- jEasyUI JS -->
-    <script type="text/javascript" src="https://www.jeasyui.com/easyui/jquery.easyui.min.js"></script>
-    <script type="text/javascript" src="https://www.jeasyui.com/easyui/locale/easyui-lang-es.js"></script>
+
+    <!-- jEasyUI JS (local) -->
+    <script type="text/javascript" src="{{ asset('vendor/easyui/jquery.easyui.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('vendor/easyui/locale/easyui-lang-es.js') }}"></script>
     
     <script>
         $.ajaxSetup({
