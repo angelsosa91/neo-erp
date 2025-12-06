@@ -7,6 +7,9 @@ echo "Neo ERP - Script de Deployment"
 echo "======================================"
 echo ""
 
+docker compose down
+docker system prune -a -f
+
 # Check if .env exists
 #if [ ! -f .env ]; then
 #    echo "Archivo .env no encontrado. Copiando .env.docker..."
