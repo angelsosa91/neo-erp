@@ -814,35 +814,37 @@
         </div>
     </div>
     
-    <!-- Bootstrap 5 JS (PRIMERO - antes de jQuery para evitar conflictos) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <!-- jQuery (required by jEasyUI) - local -->
     <script src="{{ asset('vendor/jquery/jquery-3.7.1.min.js') }}"></script>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- jEasyUI JS (local) -->
     <script type="text/javascript" src="{{ asset('vendor/easyui/jquery.easyui.min.js') }}"></script>
     <script type="text/javascript" src="{{ asset('vendor/easyui/locale/easyui-lang-es.js') }}"></script>
-
+    
     <script>
-        // Verificar que todo esté cargado correctamente
-        console.log('Bootstrap loaded:', typeof bootstrap !== 'undefined');
-        console.log('jQuery loaded:', typeof jQuery !== 'undefined');
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
 
-        // Configuración de jQuery para CSRF
-        if (typeof jQuery !== 'undefined') {
-            jQuery.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
-                }
+        // Toggle submenu
+        $(document).ready(function() {
+            $('.has-submenu > a').click(function(e) {
+                e.preventDefault();
+                var $parent = $(this).parent();
+                $parent.toggleClass('open');
+                $parent.find('.submenu').toggleClass('show');
             });
-        }
-
-        // FUNCIONES GLOBALES (fuera de jQuery para que funcionen siempre)
+        });
 
         // Toggle sidebar collapse/expand
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
             const toggleIcon = document.getElementById('toggle-icon');
 
             sidebar.classList.toggle('collapsed');
@@ -860,9 +862,20 @@
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
         }
 
+        // Restore sidebar state on page load
+        $(document).ready(function() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                const sidebar = document.getElementById('sidebar');
+                const toggleIcon = document.getElementById('toggle-icon');
+                sidebar.classList.add('collapsed');
+                toggleIcon.classList.remove('bi-list');
+                toggleIcon.classList.add('bi-chevron-right');
+            }
+        });
+
         // Mobile sidebar functions
         function toggleMobileSidebar() {
-            console.log('toggleMobileSidebar called');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
 
@@ -874,100 +887,68 @@
         }
 
         function openMobileSidebar() {
-            console.log('openMobileSidebar called');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
 
             sidebar.classList.add('mobile-open');
             overlay.classList.add('show');
-            document.body.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
         }
 
         function closeMobileSidebar() {
-            console.log('closeMobileSidebar called');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
 
             sidebar.classList.remove('mobile-open');
             overlay.classList.remove('show');
-            document.body.style.overflow = '';
+            document.body.style.overflow = ''; // Restaurar scroll
         }
+
+        // Cerrar menú al hacer clic en un enlace (solo móvil)
+        $(document).ready(function() {
+            if (window.innerWidth <= 768) {
+                $('.sidebar .nav-menu a').on('click', function(e) {
+                    // Solo cerrar si no es un submenu toggle
+                    if (!$(this).parent().hasClass('has-submenu') || $(this).find('i.chevron').length === 0) {
+                        setTimeout(closeMobileSidebar, 300);
+                    }
+                });
+            }
+        });
+
+        // Swipe gesture para cerrar menú (táctil)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.getElementById('sidebar').addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        document.getElementById('sidebar').addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
 
         function handleSwipe() {
             const swipeThreshold = 100;
             const diff = touchStartX - touchEndX;
 
+            // Swipe hacia la izquierda para cerrar
             if (diff > swipeThreshold && window.innerWidth <= 768) {
                 closeMobileSidebar();
             }
         }
 
-        // Variables para swipe
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        // INICIALIZACIÓN cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing...');
-
-            // Restaurar estado del sidebar
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                const sidebar = document.getElementById('sidebar');
-                const toggleIcon = document.getElementById('toggle-icon');
-                sidebar.classList.add('collapsed');
-                toggleIcon.classList.remove('bi-list');
-                toggleIcon.classList.add('bi-chevron-right');
-            }
-
-            // Swipe gesture para cerrar menú
-            const sidebar = document.getElementById('sidebar');
-            if (sidebar) {
-                sidebar.addEventListener('touchstart', function(e) {
-                    touchStartX = e.changedTouches[0].screenX;
-                }, { passive: true });
-
-                sidebar.addEventListener('touchend', function(e) {
-                    touchEndX = e.changedTouches[0].screenX;
-                    handleSwipe();
-                }, { passive: true });
-            }
-
-            // Detectar cambio de tamaño de pantalla
-            let resizeTimer;
-            window.addEventListener('resize', function() {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(function() {
-                    if (window.innerWidth > 768) {
-                        closeMobileSidebar();
-                    }
-                }, 250);
-            });
-        });
-
-        // Inicialización de jQuery cuando esté listo
-        if (typeof jQuery !== 'undefined') {
-            jQuery(document).ready(function($) {
-                console.log('jQuery ready, initializing...');
-
-                // Toggle submenu
-                $('.has-submenu > a').click(function(e) {
-                    e.preventDefault();
-                    var $parent = $(this).parent();
-                    $parent.toggleClass('open');
-                    $parent.find('.submenu').toggleClass('show');
-                });
-
-                // Cerrar menú móvil al hacer clic en enlaces
-                if (window.innerWidth <= 768) {
-                    $('.sidebar .nav-menu a').on('click', function(e) {
-                        if (!$(this).parent().hasClass('has-submenu') || $(this).find('i.chevron').length === 0) {
-                            setTimeout(closeMobileSidebar, 300);
-                        }
-                    });
+        // Detectar cambio de tamaño de pantalla
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                if (window.innerWidth > 768) {
+                    closeMobileSidebar(); // Cerrar menú móvil al cambiar a escritorio
                 }
-            });
-        }
+            }, 250);
+        });
     </script>
     
     @stack('scripts')
