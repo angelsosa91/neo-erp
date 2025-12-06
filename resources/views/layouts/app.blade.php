@@ -743,6 +743,7 @@
             const toggleIcon = document.getElementById('toggle-icon');
 
             sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
 
             // Change icon
             if (sidebar.classList.contains('collapsed')) {
@@ -762,8 +763,10 @@
             const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             if (isCollapsed) {
                 const sidebar = document.getElementById('sidebar');
+                const mainContent = document.querySelector('.main-content');
                 const toggleIcon = document.getElementById('toggle-icon');
                 sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
                 toggleIcon.classList.remove('bi-list');
                 toggleIcon.classList.add('bi-chevron-right');
             }
