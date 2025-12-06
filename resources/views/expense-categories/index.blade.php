@@ -66,10 +66,10 @@
             <label class="form-label">Cuenta Contable del Plan de Cuentas <span class="text-danger">*</span></label>
             <select class="easyui-combobox" name="account_id" id="category-account" style="width:100%"
                 data-options="
-                    url:'{{ route('account-chart.list') }}?type=expense',
+                    url:'{{ route('account-chart.detail-accounts') }}?account_type=expense',
                     method:'get',
                     valueField:'id',
-                    textField:'full_name',
+                    textField:'name',
                     required:true,
                     editable:true,
                     panelHeight:'300px',
