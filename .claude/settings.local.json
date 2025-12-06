@@ -1,22 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan make:migration:*)",
-      "Bash(c:/xampp/php/php.exe artisan migrate:*)",
-      "Bash(c:xamppphpphp.exe artisan migrate)",
-      "Bash(php artisan migrate:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan migrate:rollback:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan db:wipe)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:migration add_user_date_status_index_to_cash_registers)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan db:seed)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan tinker:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:migration:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan db:seed:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:controller:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan:*)",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:model:*)",
-      "Bash(if not exist \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\" mkdir \"c:\\xampp\\htdocs\\neo-erp\\resources\\views\\accounting\\settings\")",
-      "Bash(\"c:/xampp/php/php.exe\" artisan make:model CompanySetting)"
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []
