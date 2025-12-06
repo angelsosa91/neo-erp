@@ -38,10 +38,13 @@ class AccountingIntegrationService
         // Crear el asiento contable
         DB::beginTransaction();
         try {
+            $period = date('Y-m', strtotime($sale->sale_date));
+
             $journalEntry = JournalEntry::create([
                 'tenant_id' => $tenantId,
-                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
                 'entry_date' => $sale->sale_date,
+                'period' => $period,
                 'reference' => $sale->sale_number,
                 'description' => $this->getSaleDescription($sale),
                 'status' => 'posted',
@@ -114,10 +117,13 @@ class AccountingIntegrationService
         DB::beginTransaction();
         try {
             // Crear asiento de reversa
+            $period = date('Y-m');
+
             $reversalEntry = JournalEntry::create([
                 'tenant_id' => $sale->tenant_id,
-                'entry_number' => JournalEntry::generateEntryNumber($sale->tenant_id),
+                'entry_number' => JournalEntry::generateEntryNumber($sale->tenant_id, $period),
                 'entry_date' => now()->toDateString(),
+                'period' => $period,
                 'reference' => $sale->sale_number . ' (Anulación)',
                 'description' => 'Anulación de venta ' . $sale->sale_number,
                 'status' => 'posted',
@@ -254,10 +260,13 @@ class AccountingIntegrationService
         // Crear el asiento contable
         DB::beginTransaction();
         try {
+            $period = date('Y-m', strtotime($purchase->purchase_date));
+
             $journalEntry = JournalEntry::create([
                 'tenant_id' => $tenantId,
-                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
                 'entry_date' => $purchase->purchase_date,
+                'period' => $period,
                 'reference' => $purchase->purchase_number,
                 'description' => $this->getPurchaseDescription($purchase),
                 'status' => 'posted',
@@ -330,10 +339,13 @@ class AccountingIntegrationService
         DB::beginTransaction();
         try {
             // Crear asiento de reversa
+            $period = date('Y-m');
+
             $reversalEntry = JournalEntry::create([
                 'tenant_id' => $purchase->tenant_id,
-                'entry_number' => JournalEntry::generateEntryNumber($purchase->tenant_id),
+                'entry_number' => JournalEntry::generateEntryNumber($purchase->tenant_id, $period),
                 'entry_date' => now()->toDateString(),
+                'period' => $period,
                 'reference' => $purchase->purchase_number . ' (Anulación)',
                 'description' => 'Anulación de compra ' . $purchase->purchase_number,
                 'status' => 'posted',
@@ -461,10 +473,13 @@ class AccountingIntegrationService
 
         DB::beginTransaction();
         try {
+            $period = date('Y-m', strtotime($payment->payment_date));
+
             $journalEntry = JournalEntry::create([
                 'tenant_id' => $tenantId,
-                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
                 'entry_date' => $payment->payment_date,
+                'period' => $period,
                 'reference' => $payment->payment_number,
                 'description' => 'Cobro ' . $payment->payment_number . ' - ' . $payment->accountReceivable->customer_name,
                 'status' => 'posted',
@@ -522,10 +537,13 @@ class AccountingIntegrationService
 
         DB::beginTransaction();
         try {
+            $period = date('Y-m', strtotime($payment->payment_date));
+
             $journalEntry = JournalEntry::create([
                 'tenant_id' => $tenantId,
-                'entry_number' => JournalEntry::generateEntryNumber($tenantId),
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
                 'entry_date' => $payment->payment_date,
+                'period' => $period,
                 'reference' => $payment->payment_number,
                 'description' => 'Pago ' . $payment->payment_number . ' - ' . $payment->accountPayable->supplier_name,
                 'status' => 'posted',
