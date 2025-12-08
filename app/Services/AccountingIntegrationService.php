@@ -688,11 +688,20 @@ class AccountingIntegrationService
         // Determinar cuenta de crédito según método de pago
         $creditAccountId = $this->getCreditAccountForExpense($tenantId, $expense);
 
-        // Obtener cuenta de gastos desde la categoría
-        if (!$expense->category || !$expense->category->account_id) {
-            throw new \Exception('La categoría del gasto no tiene cuenta contable asociada. Configure la cuenta en Gastos > Categorías.');
+        // Obtener cuenta de gastos: primero intentar de la categoría, luego usar cuenta por defecto
+        $debitAccountId = null;
+        if ($expense->category && $expense->category->account_id) {
+            // Usar cuenta de la categoría si está configurada
+            $debitAccountId = $expense->category->account_id;
+        } else {
+            // Usar cuenta de gastos por defecto como fallback
+            $debitAccountId = AccountingSetting::getValue($tenantId, 'expenses_default');
         }
-        $debitAccountId = $expense->category->account_id;
+
+        // Si no hay ninguna cuenta disponible, lanzar error (esto no debería pasar por validateExpenseAccounts)
+        if (!$debitAccountId) {
+            throw new \Exception('No se pudo determinar la cuenta de gasto. Configure la cuenta en la categoría o en Configuración Contable.');
+        }
 
         // Obtener cuenta de IVA compras si hay IVA
         $taxAccountId = null;
@@ -826,9 +835,18 @@ class AccountingIntegrationService
     {
         $errors = [];
 
-        // Validar que la categoría tenga cuenta asignada
-        if (!$expense->category || !$expense->category->account_id) {
-            $errors[] = 'Cuenta de Gasto (asignada a la categoría)';
+        // Validar que exista al menos una cuenta de gasto: de la categoría o la cuenta por defecto
+        $hasExpenseAccount = false;
+        if ($expense->category && $expense->category->account_id) {
+            // La categoría tiene cuenta asignada
+            $hasExpenseAccount = true;
+        } elseif (AccountingSetting::getValue($tenantId, 'expenses_default')) {
+            // Usar cuenta de gastos por defecto como fallback
+            $hasExpenseAccount = true;
+        }
+
+        if (!$hasExpenseAccount) {
+            $errors[] = 'Cuenta de Gasto (asignada a la categoría o Cuenta de Gastos por Defecto en Configuración Contable)';
         }
 
         // Validar cuenta según método de pago
