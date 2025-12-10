@@ -44,6 +44,12 @@ class PermissionSeeder extends Seeder
             ['name' => 'Ver Ventas', 'slug' => 'sales.view', 'module' => 'ventas'],
             ['name' => 'Crear Ventas', 'slug' => 'sales.create', 'module' => 'ventas'],
             ['name' => 'Anular Ventas', 'slug' => 'sales.cancel', 'module' => 'ventas'],
+
+            // Notas de Crédito
+            ['name' => 'Ver Notas de Crédito', 'slug' => 'credit-notes.view', 'module' => 'notas_credito'],
+            ['name' => 'Crear Notas de Crédito', 'slug' => 'credit-notes.create', 'module' => 'notas_credito'],
+            ['name' => 'Confirmar Notas de Crédito', 'slug' => 'credit-notes.confirm', 'module' => 'notas_credito'],
+            ['name' => 'Anular Notas de Crédito', 'slug' => 'credit-notes.cancel', 'module' => 'notas_credito'],
             
             // Compras
             ['name' => 'Ver Compras', 'slug' => 'purchases.view', 'module' => 'compras'],

@@ -491,4 +491,40 @@ class SaleController extends Controller
 
         return $pdf->download('factura-' . $sale->sale_number . '.pdf');
     }
+
+    /**
+     * Obtener listado de ventas para combo/select
+     */
+    public function list(Request $request)
+    {
+        $search = $request->get('q');
+        $status = $request->get('status');
+
+        $query = Sale::with(['customer'])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('sale_number', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
+            })
+            ->orderBy('id', 'desc')
+            ->limit(20);
+
+        $sales = $query->get()->map(function ($sale) {
+            return [
+                'id' => $sale->id,
+                'sale_number' => $sale->sale_number,
+                'sale_date' => $sale->sale_date->format('d/m/Y'),
+                'customer_name' => $sale->customer ? $sale->customer->name : 'Sin cliente',
+                'total' => number_format($sale->total, 0, ',', '.'),
+            ];
+        });
+
+        return response()->json($sales);
+    }
 }

@@ -84,6 +84,14 @@ class Sale extends Model
     }
 
     /**
+     * Relación con las notas de crédito
+     */
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    /**
      * Generar número de venta automático
      */
     public static function generateSaleNumber(int $tenantId): string

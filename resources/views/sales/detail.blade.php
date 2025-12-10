@@ -21,6 +21,11 @@
                 <i class="bi bi-x-lg"></i> Anular
             </button>
             @endif
+            @if($sale->status === 'confirmed')
+            <a href="{{ route('credit-notes.create', ['sale_id' => $sale->id]) }}" class="btn btn-warning">
+                <i class="bi bi-file-earmark-minus"></i> Nota de Crédito
+            </a>
+            @endif
             <a href="{{ route('sales.pdf', $sale) }}" target="_blank" class="btn btn-primary">
                 <i class="bi bi-file-pdf"></i> Ver PDF
             </a>

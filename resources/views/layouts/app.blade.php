@@ -326,13 +326,13 @@
             <div class="menu-section-title">Operaciones</div>
 
             <!-- Ventas -->
-            <li class="has-submenu {{ request()->routeIs('sales.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'active' : '' }}">
                     <i class="bi bi-cart-check"></i>
                     <span class="menu-text">Ventas</span>
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
-                <ul class="submenu {{ request()->routeIs('sales.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('sales.create') }}" class="{{ request()->routeIs('sales.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle"></i>
@@ -343,6 +343,12 @@
                         <a href="{{ route('sales.index') }}" class="{{ request()->routeIs('sales.index') ? 'active' : '' }}">
                             <i class="bi bi-list-ul"></i>
                             <span class="menu-text">Listado</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('credit-notes.index') }}" class="{{ request()->routeIs('credit-notes.*') ? 'active' : '' }}">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-text">Notas de Crédito</span>
                         </a>
                     </li>
                 </ul>

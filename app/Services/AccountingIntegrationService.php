@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Models\Purchase;
 use App\Models\AccountReceivablePayment;
 use App\Models\AccountPayablePayment;
+use App\Models\CreditNote;
 use Illuminate\Support\Facades\DB;
 
 class AccountingIntegrationService
@@ -904,6 +905,153 @@ class AccountingIntegrationService
 
         if ($expense->category) {
             $description .= ' (' . $expense->category->name . ')';
+        }
+
+        return $description;
+    }
+
+    /**
+     * Crear asiento contable para una nota de crédito (reversión de venta)
+     */
+    public function createCreditNoteJournalEntry(CreditNote $creditNote): JournalEntry
+    {
+        $tenantId = $creditNote->tenant_id;
+        $sale = $creditNote->sale;
+
+        // Verificar que las cuentas necesarias estén configuradas
+        $this->validateCreditNoteAccounts($tenantId, $sale);
+
+        // Determinar la cuenta de crédito según el método de pago original de la venta
+        $creditAccountId = $this->getDebitAccountForSale($tenantId, $sale);
+
+        // Obtener cuenta de ingresos
+        $debitAccountId = AccountingSetting::getValue($tenantId, 'sales_income');
+
+        // Obtener cuenta de IVA ventas si hay IVA
+        $taxAccountId = null;
+        $totalIva = $creditNote->iva_5 + $creditNote->iva_10;
+        if ($totalIva > 0) {
+            $taxAccountId = AccountingSetting::getValue($tenantId, 'sales_tax');
+        }
+
+        // Crear el asiento contable (reversión de la venta)
+        DB::beginTransaction();
+        try {
+            $period = date('Y-m', strtotime($creditNote->date));
+
+            $journalEntry = JournalEntry::create([
+                'tenant_id' => $tenantId,
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
+                'entry_date' => $creditNote->date,
+                'period' => $period,
+                'reference' => $creditNote->credit_note_number,
+                'description' => $this->getCreditNoteDescription($creditNote),
+                'status' => 'posted',
+                'user_id' => $creditNote->created_by,
+            ]);
+
+            // Calcular subtotal sin IVA
+            $subtotalWithoutTax = $creditNote->subtotal_0 + $creditNote->subtotal_5 + $creditNote->subtotal_10;
+
+            // Línea de débito: Ingresos por Ventas (reversión - reduce ingresos)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $debitAccountId,
+                'description' => 'NC ' . $creditNote->credit_note_number . ' - ' . $sale->sale_number,
+                'debit' => $subtotalWithoutTax,
+                'credit' => 0,
+            ]);
+
+            // Si hay IVA, agregar línea de débito para IVA (reversión)
+            if ($totalIva > 0 && $taxAccountId) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_id' => $taxAccountId,
+                    'description' => 'IVA NC ' . $creditNote->credit_note_number,
+                    'debit' => $totalIva,
+                    'credit' => 0,
+                ]);
+            }
+
+            // Línea de crédito: Caja/Banco/Cuentas por Cobrar (reversión - devuelve dinero o reduce deuda)
+            JournalEntryLine::create([
+                'journal_entry_id' => $journalEntry->id,
+                'account_id' => $creditAccountId,
+                'description' => $this->getCreditNoteDescription($creditNote),
+                'debit' => 0,
+                'credit' => $creditNote->total,
+            ]);
+
+            // Actualizar saldos de cuentas
+            $journalEntry->updateAccountBalances();
+
+            DB::commit();
+
+            return $journalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Validar que las cuentas necesarias para notas de crédito estén configuradas
+     */
+    private function validateCreditNoteAccounts(int $tenantId, Sale $sale): void
+    {
+        $errors = [];
+
+        // Validar cuenta de ingresos
+        if (!AccountingSetting::getValue($tenantId, 'sales_income')) {
+            $errors[] = 'Cuenta de Ingresos por Ventas';
+        }
+
+        // Validar cuenta según método de pago
+        if ($sale->payment_type === 'credit') {
+            if (!AccountingSetting::getValue($tenantId, 'accounts_receivable')) {
+                $errors[] = 'Cuenta de Cuentas por Cobrar';
+            }
+        } else {
+            // Venta al contado
+            if ($sale->payment_method === 'cash') {
+                if (!AccountingSetting::getValue($tenantId, 'cash')) {
+                    $errors[] = 'Cuenta de Caja';
+                }
+            } elseif (in_array($sale->payment_method, ['card', 'transfer'])) {
+                if (!AccountingSetting::getValue($tenantId, 'bank_default')) {
+                    $errors[] = 'Cuenta de Banco por Defecto';
+                }
+            }
+        }
+
+        // Validar cuenta de IVA si hay IVA
+        $totalIva = $sale->iva_5 + $sale->iva_10;
+        if ($totalIva > 0) {
+            if (!AccountingSetting::getValue($tenantId, 'sales_tax')) {
+                $errors[] = 'Cuenta de IVA Ventas';
+            }
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(
+                'Debe configurar las siguientes cuentas contables antes de confirmar la nota de crédito: ' .
+                implode(', ', $errors) . '. ' .
+                'Vaya a Contabilidad > Configuración Contable para configurarlas.'
+            );
+        }
+    }
+
+    /**
+     * Obtener descripción del asiento de nota de crédito
+     */
+    private function getCreditNoteDescription(CreditNote $creditNote): string
+    {
+        $description = 'Nota de Crédito ' . $creditNote->credit_note_number;
+        $description .= ' - Ref: ' . $creditNote->sale->sale_number;
+
+        if ($creditNote->customer) {
+            $description .= ' - ' . $creditNote->customer->name;
         }
 
         return $description;

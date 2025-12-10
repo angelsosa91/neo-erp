@@ -27,6 +27,7 @@ use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\AccountingSettingController;
 use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CreditNoteController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -110,6 +111,7 @@ Route::middleware('auth')->group(function () {
     // Ventas
     Route::get('/sales', [SaleController::class, 'index'])->name('sales.index');
     Route::get('/sales/data', [SaleController::class, 'data'])->name('sales.data');
+    Route::get('/sales/list', [SaleController::class, 'list'])->name('sales.list');
     Route::get('/sales/create', [SaleController::class, 'create'])->name('sales.create');
     Route::post('/sales', [SaleController::class, 'store'])->name('sales.store');
     Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
@@ -119,6 +121,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales/{sale}/confirm', [SaleController::class, 'confirm'])->name('sales.confirm');
     Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
     Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');
+
+    // Notas de Crédito
+    Route::get('/credit-notes', [CreditNoteController::class, 'index'])->name('credit-notes.index');
+    Route::get('/credit-notes/data', [CreditNoteController::class, 'data'])->name('credit-notes.data');
+    Route::get('/credit-notes/create', [CreditNoteController::class, 'create'])->name('credit-notes.create');
+    Route::get('/credit-notes/sale-details/{sale}', [CreditNoteController::class, 'getSaleDetails'])->name('credit-notes.sale-details');
+    Route::post('/credit-notes', [CreditNoteController::class, 'store'])->name('credit-notes.store');
+    Route::get('/credit-notes/{creditNote}', [CreditNoteController::class, 'show'])->name('credit-notes.show');
+    Route::get('/credit-notes/{creditNote}/pdf', [CreditNoteController::class, 'generatePDF'])->name('credit-notes.pdf');
+    Route::get('/credit-notes/{creditNote}/download-pdf', [CreditNoteController::class, 'downloadPDF'])->name('credit-notes.download-pdf');
+    Route::post('/credit-notes/{creditNote}/confirm', [CreditNoteController::class, 'confirm'])->name('credit-notes.confirm');
+    Route::post('/credit-notes/{creditNote}/cancel', [CreditNoteController::class, 'cancel'])->name('credit-notes.cancel');
 
     // Compras
     Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
