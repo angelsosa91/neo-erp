@@ -28,6 +28,7 @@ use App\Http\Controllers\AccountingSettingController;
 use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CreditNoteController;
+use App\Http\Controllers\RemissionController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -133,6 +134,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/credit-notes/{creditNote}/download-pdf', [CreditNoteController::class, 'downloadPDF'])->name('credit-notes.download-pdf');
     Route::post('/credit-notes/{creditNote}/confirm', [CreditNoteController::class, 'confirm'])->name('credit-notes.confirm');
     Route::post('/credit-notes/{creditNote}/cancel', [CreditNoteController::class, 'cancel'])->name('credit-notes.cancel');
+
+    // Remisiones
+    Route::get('/remissions', [RemissionController::class, 'index'])->name('remissions.index');
+    Route::get('/remissions/data', [RemissionController::class, 'data'])->name('remissions.data');
+    Route::get('/remissions/create', [RemissionController::class, 'create'])->name('remissions.create');
+    Route::post('/remissions', [RemissionController::class, 'store'])->name('remissions.store');
+    Route::get('/remissions/{remission}', [RemissionController::class, 'show'])->name('remissions.show');
+    Route::get('/remissions/{remission}/pdf', [RemissionController::class, 'generatePDF'])->name('remissions.pdf');
+    Route::get('/remissions/{remission}/download-pdf', [RemissionController::class, 'downloadPDF'])->name('remissions.download-pdf');
+    Route::post('/remissions/{remission}/confirm', [RemissionController::class, 'confirm'])->name('remissions.confirm');
+    Route::post('/remissions/{remission}/deliver', [RemissionController::class, 'deliver'])->name('remissions.deliver');
+    Route::post('/remissions/{remission}/convert-to-sale', [RemissionController::class, 'convertToSale'])->name('remissions.convert-to-sale');
+    Route::post('/remissions/{remission}/cancel', [RemissionController::class, 'cancel'])->name('remissions.cancel');
 
     // Compras
     Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');

@@ -326,13 +326,13 @@
             <div class="menu-section-title">Operaciones</div>
 
             <!-- Ventas -->
-            <li class="has-submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'active' : '' }}">
                     <i class="bi bi-cart-check"></i>
                     <span class="menu-text">Ventas</span>
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
-                <ul class="submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('sales.create') }}" class="{{ request()->routeIs('sales.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle"></i>
@@ -349,6 +349,12 @@
                         <a href="{{ route('credit-notes.index') }}" class="{{ request()->routeIs('credit-notes.*') ? 'active' : '' }}">
                             <i class="bi bi-file-earmark-minus"></i>
                             <span class="menu-text">Notas de Crédito</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('remissions.index') }}" class="{{ request()->routeIs('remissions.*') ? 'active' : '' }}">
+                            <i class="bi bi-truck"></i>
+                            <span class="menu-text">Remisiones</span>
                         </a>
                     </li>
                 </ul>

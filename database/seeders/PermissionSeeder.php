@@ -50,7 +50,15 @@ class PermissionSeeder extends Seeder
             ['name' => 'Crear Notas de Crédito', 'slug' => 'credit-notes.create', 'module' => 'notas_credito'],
             ['name' => 'Confirmar Notas de Crédito', 'slug' => 'credit-notes.confirm', 'module' => 'notas_credito'],
             ['name' => 'Anular Notas de Crédito', 'slug' => 'credit-notes.cancel', 'module' => 'notas_credito'],
-            
+
+            // Remisiones
+            ['name' => 'Ver Remisiones', 'slug' => 'remissions.view', 'module' => 'remisiones'],
+            ['name' => 'Crear Remisiones', 'slug' => 'remissions.create', 'module' => 'remisiones'],
+            ['name' => 'Confirmar Remisiones', 'slug' => 'remissions.confirm', 'module' => 'remisiones'],
+            ['name' => 'Entregar Remisiones', 'slug' => 'remissions.deliver', 'module' => 'remisiones'],
+            ['name' => 'Convertir Remisiones a Factura', 'slug' => 'remissions.convert', 'module' => 'remisiones'],
+            ['name' => 'Anular Remisiones', 'slug' => 'remissions.cancel', 'module' => 'remisiones'],
+
             // Compras
             ['name' => 'Ver Compras', 'slug' => 'purchases.view', 'module' => 'compras'],
             ['name' => 'Crear Compras', 'slug' => 'purchases.create', 'module' => 'compras'],

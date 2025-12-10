@@ -92,6 +92,14 @@ class Sale extends Model
     }
 
     /**
+     * Relación con la remisión origen (si fue creada desde remisión)
+     */
+    public function remission()
+    {
+        return $this->hasOne(Remission::class);
+    }
+
+    /**
      * Generar número de venta automático
      */
     public static function generateSaleNumber(int $tenantId): string
