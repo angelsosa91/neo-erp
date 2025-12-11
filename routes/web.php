@@ -29,6 +29,7 @@ use App\Http\Controllers\FinancialStatementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\RemissionController;
+use App\Http\Controllers\HelpController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -337,4 +338,10 @@ Route::middleware('auth')->group(function () {
     // Estados Financieros
     Route::get('/accounting/balance-sheet', [FinancialStatementController::class, 'balanceSheet'])->name('accounting.balance-sheet');
     Route::get('/accounting/income-statement', [FinancialStatementController::class, 'incomeStatement'])->name('accounting.income-statement');
+
+    // Centro de Ayuda
+    Route::get('/help', [HelpController::class, 'index'])->name('help.index');
+    Route::get('/help/contextual', [HelpController::class, 'contextual'])->name('help.contextual');
+    Route::get('/help/search', [HelpController::class, 'search'])->name('help.search');
+    Route::get('/help/{slug}', [HelpController::class, 'show'])->name('help.show');
 });

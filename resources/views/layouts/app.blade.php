@@ -678,8 +678,13 @@
             <div>
                 <h5 class="mb-0">@yield('page-title', 'Dashboard')</h5>
             </div>
-            <div class="d-flex align-items-center">
-                <span class="me-3">{{ auth()->user()->name }}</span>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Botón de Ayuda -->
+                <a href="{{ route('help.index') }}" class="btn btn-outline-primary btn-sm" title="Centro de Ayuda">
+                    <i class="bi bi-question-circle"></i> Ayuda
+                </a>
+
+                <span class="me-2">{{ auth()->user()->name }}</span>
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="bi bi-person-circle"></i>
@@ -784,7 +789,10 @@
             }
         });
     </script>
-    
+
     @stack('scripts')
+
+    <!-- Widget de Ayuda Flotante -->
+    <x-help-widget :module="request()->segment(1)" />
 </body>
 </html>
