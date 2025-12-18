@@ -5,13 +5,27 @@
 
 @section('content')
 <div id="toolbar" style="padding: 10px;">
+    @can('bank-reconciliations.create')
     <a href="{{ route('bank-reconciliations.create') }}" class="easyui-linkbutton" iconCls="icon-add">Nueva Conciliación</a>
+    @endcan
+    @can('bank-reconciliations.view')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-tip" onclick="viewDetail()">Ver Detalle</a>
+    @endcan
+    @can('bank-reconciliations.edit')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" onclick="editReconciliation()">Editar</a>
+    @endcan
+    @can('bank-reconciliations.post')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok" onclick="postReconciliation()">Publicar</a>
+    @endcan
+    @can('bank-reconciliations.cancel')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-cancel" onclick="cancelReconciliation()">Cancelar</a>
+    @endcan
+    @can('bank-reconciliations.delete')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" onclick="deleteReconciliation()">Eliminar</a>
+    @endcan
+    @can('bank-reconciliations.view')
     <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-print" onclick="printReport()">Imprimir</a>
+    @endcan
     <span style="margin-left: 20px;">
         <select id="status_filter" class="easyui-combobox" style="width: 150px;" data-options="
             panelHeight: 'auto',

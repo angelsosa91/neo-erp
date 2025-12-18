@@ -8,9 +8,15 @@
     <div class="card-body">
         <!-- Toolbar -->
         <div id="toolbar" style="padding:5px;">
+            @can('users.create')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newUser()">Nuevo Usuario</a>
+            @endcan
+            @can('users.edit')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editUser()">Editar</a>
+            @endcan
+            @can('users.delete')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="deleteUser()">Eliminar</a>
+            @endcan
             <span class="ms-3">
                 <input id="searchbox" class="easyui-searchbox" style="width:250px"
                     data-options="searcher:doSearch,prompt:'Buscar usuario...'">

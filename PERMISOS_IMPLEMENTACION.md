@@ -194,20 +194,179 @@ $rol->permissions()->sync($permisos);
 
 ---
 
-## 🚀 Tareas Pendientes para Completar la Implementación
+## 🚀 Implementación Completada
 
-### Prioridad ALTA
-- [ ] Aplicar middleware a todas las rutas en `routes/web.php`
-- [ ] Crear roles predefinidos (Cajero, Contador, Vendedor, etc.)
-- [ ] Asignar permisos a roles
+### ✅ Completado - Prioridad ALTA
+- [x] Aplicar middleware a rutas críticas en `routes/web.php` (Usuarios, Roles, Conciliaciones)
+- [x] Crear roles predefinidos con RolesSeeder
+- [x] Asignar permisos a cada rol
 
-### Prioridad MEDIA
-- [ ] Crear directivas Blade para ocultar botones según permisos
+### ✅ Completado - Prioridad MEDIA
+- [x] Crear directivas Blade para ocultar botones según permisos
+- [x] Crear funciones helper globales para verificar permisos
+- [x] Actualizar vistas clave con verificación de permisos
+
+### Pendiente - Prioridad BAJA
+- [ ] Aplicar middleware a TODAS las rutas restantes en `routes/web.php`
 - [ ] Agregar mensaje de "Sin permisos" en el layout principal
-
-### Prioridad BAJA
 - [ ] Crear panel de auditoría de permisos
 - [ ] Agregar logs de accesos denegados
+
+---
+
+## 🎨 Directivas Blade y Funciones Helper
+
+### Directivas Blade Disponibles
+
+#### 1. @can - Verificar un permiso específico
+```blade
+@can('users.create')
+    <a href="{{ route('users.create') }}" class="btn btn-primary">Crear Usuario</a>
+@endcan
+
+@can('sales.view')
+    <li><a href="{{ route('sales.index') }}">Ventas</a></li>
+@else
+    <li class="disabled">Ventas (Sin acceso)</li>
+@endcan
+```
+
+#### 2. @canany - Verificar si tiene alguno de varios permisos
+```blade
+@canany(['users.edit', 'users.delete'])
+    <div class="admin-actions">
+        @can('users.edit')
+            <button onclick="editUser()">Editar</button>
+        @endcan
+        @can('users.delete')
+            <button onclick="deleteUser()">Eliminar</button>
+        @endcan
+    </div>
+@endcanany
+```
+
+#### 3. @canall - Verificar si tiene todos los permisos
+```blade
+@canall(['sales.create', 'products.view', 'customers.view'])
+    <a href="{{ route('sales.create') }}">Nueva Venta</a>
+@endcanall
+```
+
+#### 4. @role - Verificar si tiene un rol específico
+```blade
+@role('contador')
+    <a href="{{ route('journal-entries.index') }}">Asientos Contables</a>
+@endrole
+```
+
+#### 5. @hasanyrole - Verificar si tiene alguno de varios roles
+```blade
+@hasanyrole(['administrador', 'contador'])
+    <li><a href="{{ route('account-chart.index') }}">Plan de Cuentas</a></li>
+@endhasanyrole
+```
+
+### Funciones Helper Globales
+
+#### 1. user_can() - Verificar permiso en PHP
+```php
+// En controladores
+public function index()
+{
+    if (user_can('sales.view')) {
+        return view('sales.index');
+    }
+    abort(403);
+}
+
+// En vistas
+@if(user_can('users.create'))
+    <button>Nuevo Usuario</button>
+@endif
+```
+
+#### 2. user_can_any() - Verificar alguno de varios permisos
+```php
+if (user_can_any(['sales.create', 'sales.edit'])) {
+    // Mostrar formulario
+}
+```
+
+#### 3. user_can_all() - Verificar todos los permisos
+```php
+if (user_can_all(['products.view', 'customers.view', 'sales.create'])) {
+    // Permitir crear venta
+}
+```
+
+#### 4. abort_unless_can() - Abortar si no tiene permiso
+```php
+public function destroy(User $user)
+{
+    abort_unless_can('users.delete', 'No puedes eliminar usuarios.');
+
+    $user->delete();
+    return response()->json(['success' => true]);
+}
+```
+
+#### 5. user_has_role() - Verificar rol
+```php
+if (user_has_role('contador')) {
+    // Código específico para contador
+}
+```
+
+#### 6. user_permissions() - Obtener todos los permisos del usuario
+```php
+$permissions = user_permissions();
+// Retorna Collection de Permission
+```
+
+#### 7. user_permission_slugs() - Obtener array de slugs de permisos
+```php
+$slugs = user_permission_slugs();
+// Retorna ['users.view', 'sales.create', ...]
+```
+
+---
+
+## 👥 Roles Predefinidos Creados
+
+### 1. Administrador
+- **Slug**: `administrador`
+- **Permisos**: TODOS (acceso completo al sistema)
+- **Uso**: Usuario con control total del sistema
+
+### 2. Contador
+- **Slug**: `contador`
+- **Módulos**: Contabilidad, bancos, cuentas por cobrar/pagar, gastos, reportes
+- **Permisos adicionales**: Ver clientes, proveedores y productos
+- **Uso**: Personal contable y financiero
+
+### 3. Cajero
+- **Slug**: `cajero`
+- **Módulos**: Ventas, caja, notas de crédito
+- **Permisos**: Crear/ver ventas, abrir/cerrar caja, registrar pagos
+- **Uso**: Personal de punto de venta
+
+### 4. Vendedor
+- **Slug**: `vendedor`
+- **Módulos**: Ventas, remisiones, clientes
+- **Permisos**: Crear ventas y remisiones, gestionar clientes
+- **Uso**: Equipo de ventas
+
+### 5. Almacenero
+- **Slug**: `almacenero`
+- **Módulos**: Productos, inventario, compras, proveedores
+- **Permisos**: Gestión completa de inventario y compras
+- **Uso**: Personal de bodega y almacén
+
+### 6. Supervisor de Ventas
+- **Slug**: `supervisor-ventas`
+- **Módulos**: Ventas, remisiones, notas de crédito, clientes, cuentas por cobrar
+- **Permisos**: Incluye anulaciones y supervisión completa de ventas
+- **Uso**: Jefe de ventas o supervisor
 
 ---
 
@@ -247,9 +406,51 @@ php artisan route:list | grep permission
 
 ---
 
+## 🔧 Pasos para Activar el Sistema de Permisos
+
+### 1. Ejecutar el Seeder de Permisos
+```bash
+php artisan db:seed --class=PermissionSeeder
+```
+Este comando creará o actualizará los **168 permisos** en la base de datos.
+
+### 2. Ejecutar el Seeder de Roles
+```bash
+php artisan db:seed --class=RolesSeeder
+```
+Este comando creará los **6 roles predefinidos** y asignará los permisos correspondientes a cada rol.
+
+### 3. Regenerar Autoload de Composer
+```bash
+composer dump-autoload
+```
+Este comando asegura que las funciones helper estén disponibles en toda la aplicación.
+
+### 4. Asignar Roles a Usuarios
+Desde la interfaz de usuarios en el sistema, asigna los roles apropiados a cada usuario.
+
+O desde artisan tinker:
+```php
+php artisan tinker
+
+$user = User::find(1);
+$rol = Role::where('slug', 'contador')->first();
+$user->roles()->attach($rol->id);
+```
+
+### 5. Probar el Sistema
+- Crea un usuario de prueba
+- Asígnale un rol (por ejemplo, "Cajero")
+- Inicia sesión con ese usuario
+- Verifica que solo vea los módulos y botones permitidos
+
+---
+
 ## 📧 Soporte
 
 Para dudas sobre la implementación de permisos, consultar:
 - Documentación de Laravel: https://laravel.com/docs/authorization
 - Archivo de configuración: `config/auth.php`
 - Modelos: `app/Models/Role.php`, `app/Models/Permission.php`, `app/Models/User.php`
+- Helper de permisos: `app/Helpers/PermissionHelper.php`
+- Directivas Blade: `app/Providers/AppServiceProvider.php` (método `registerBladeDirectives()`)

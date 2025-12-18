@@ -8,9 +8,15 @@
     <div class="card-body">
         <!-- Toolbar -->
         <div id="toolbar" style="padding:5px;">
+            @can('roles.create')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true" onclick="newRole()">Nuevo Rol</a>
+            @endcan
+            @can('roles.edit')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-edit" plain="true" onclick="editRole()">Editar</a>
+            @endcan
+            @can('roles.delete')
             <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-remove" plain="true" onclick="deleteRole()">Eliminar</a>
+            @endcan
         </div>
 
         <!-- DataGrid -->
