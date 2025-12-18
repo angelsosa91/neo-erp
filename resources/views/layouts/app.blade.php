@@ -415,19 +415,27 @@
             <!-- INVENTARIO & PRODUCTOS -->
             <div class="menu-section-title">Inventario</div>
 
-            <li class="has-submenu {{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'active' : '' }}">
                     <i class="bi bi-box"></i>
                     <span class="menu-text">Productos</span>
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
-                <ul class="submenu {{ request()->routeIs('products.*', 'categories.*', 'inventory-adjustments.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'active' : '' }}">
                             <i class="bi bi-box-seam"></i>
                             <span class="menu-text">Productos</span>
                         </a>
                     </li>
+                    @canany(['services.view'])
+                    <li>
+                        <a href="{{ route('services.index') }}" class="{{ request()->routeIs('services.*') ? 'active' : '' }}">
+                            <i class="bi bi-scissors"></i>
+                            <span class="menu-text">Servicios</span>
+                        </a>
+                    </li>
+                    @endcanany
                     <li>
                         <a href="{{ route('categories.index') }}" class="{{ request()->routeIs('categories.*') ? 'active' : '' }}">
                             <i class="bi bi-tags"></i>

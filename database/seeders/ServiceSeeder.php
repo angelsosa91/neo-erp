@@ -1,0 +1,353 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Category;
+use App\Models\Service;
+use Illuminate\Database\Seeder;
+
+class ServiceSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        // Obtener tenant_id 1 (asumiendo primer tenant)
+        $tenantId = 1;
+
+        // Buscar o crear categorías para servicios
+        $categoryHair = Category::firstOrCreate(
+            ['tenant_id' => $tenantId, 'name' => 'Cabello'],
+            ['description' => 'Servicios de cabello']
+        );
+
+        $categoryNails = Category::firstOrCreate(
+            ['tenant_id' => $tenantId, 'name' => 'Uñas'],
+            ['description' => 'Servicios de manicura y pedicura']
+        );
+
+        $categoryBeauty = Category::firstOrCreate(
+            ['tenant_id' => $tenantId, 'name' => 'Belleza'],
+            ['description' => 'Servicios de belleza y estética']
+        );
+
+        // Servicios de Cabello
+        $services = [
+            // Cabello
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00001',
+                'name' => 'Corte de Cabello Dama',
+                'description' => 'Corte de cabello para mujer',
+                'category_id' => $categoryHair->id,
+                'price' => 80000,
+                'tax_rate' => 10,
+                'duration_minutes' => 45,
+                'commission_percentage' => 30.00,
+                'color' => '#e74c3c',
+                'icon' => 'bi-scissors',
+                'sort_order' => 1,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00002',
+                'name' => 'Corte de Cabello Caballero',
+                'description' => 'Corte de cabello para hombre',
+                'category_id' => $categoryHair->id,
+                'price' => 50000,
+                'tax_rate' => 10,
+                'duration_minutes' => 30,
+                'commission_percentage' => 30.00,
+                'color' => '#3498db',
+                'icon' => 'bi-scissors',
+                'sort_order' => 2,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00003',
+                'name' => 'Corte de Cabello Niño/a',
+                'description' => 'Corte de cabello infantil',
+                'category_id' => $categoryHair->id,
+                'price' => 40000,
+                'tax_rate' => 10,
+                'duration_minutes' => 25,
+                'commission_percentage' => 25.00,
+                'color' => '#f39c12',
+                'icon' => 'bi-scissors',
+                'sort_order' => 3,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00004',
+                'name' => 'Tinte de Cabello',
+                'description' => 'Tinte completo de cabello',
+                'category_id' => $categoryHair->id,
+                'price' => 200000,
+                'tax_rate' => 10,
+                'duration_minutes' => 120,
+                'commission_percentage' => 35.00,
+                'color' => '#9b59b6',
+                'icon' => 'bi-droplet-fill',
+                'sort_order' => 4,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00005',
+                'name' => 'Mechas / Reflejos',
+                'description' => 'Aplicación de mechas o reflejos',
+                'category_id' => $categoryHair->id,
+                'price' => 150000,
+                'tax_rate' => 10,
+                'duration_minutes' => 90,
+                'commission_percentage' => 35.00,
+                'color' => '#e67e22',
+                'icon' => 'bi-brightness-high',
+                'sort_order' => 5,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00006',
+                'name' => 'Peinado Simple',
+                'description' => 'Peinado básico con secado',
+                'category_id' => $categoryHair->id,
+                'price' => 60000,
+                'tax_rate' => 10,
+                'duration_minutes' => 30,
+                'commission_percentage' => 25.00,
+                'color' => '#1abc9c',
+                'icon' => 'bi-wind',
+                'sort_order' => 6,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00007',
+                'name' => 'Peinado de Fiesta',
+                'description' => 'Peinado elaborado para eventos',
+                'category_id' => $categoryHair->id,
+                'price' => 150000,
+                'tax_rate' => 10,
+                'duration_minutes' => 60,
+                'commission_percentage' => 30.00,
+                'color' => '#e91e63',
+                'icon' => 'bi-stars',
+                'sort_order' => 7,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00008',
+                'name' => 'Tratamiento Capilar',
+                'description' => 'Tratamiento de hidratación o reparación',
+                'category_id' => $categoryHair->id,
+                'price' => 100000,
+                'tax_rate' => 10,
+                'duration_minutes' => 45,
+                'commission_percentage' => 30.00,
+                'color' => '#16a085',
+                'icon' => 'bi-moisture',
+                'sort_order' => 8,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00009',
+                'name' => 'Alisado / Planchado',
+                'description' => 'Alisado permanente o temporal',
+                'category_id' => $categoryHair->id,
+                'price' => 250000,
+                'tax_rate' => 10,
+                'duration_minutes' => 150,
+                'commission_percentage' => 35.00,
+                'color' => '#8e44ad',
+                'icon' => 'bi-align-start',
+                'sort_order' => 9,
+                'is_active' => true,
+            ],
+
+            // Uñas
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00010',
+                'name' => 'Manicura Simple',
+                'description' => 'Manicura básica con esmaltado',
+                'category_id' => $categoryNails->id,
+                'price' => 40000,
+                'tax_rate' => 10,
+                'duration_minutes' => 30,
+                'commission_percentage' => 25.00,
+                'color' => '#ff6b6b',
+                'icon' => 'bi-hand-index',
+                'sort_order' => 10,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00011',
+                'name' => 'Manicura con Gel',
+                'description' => 'Manicura con esmaltado en gel',
+                'category_id' => $categoryNails->id,
+                'price' => 80000,
+                'tax_rate' => 10,
+                'duration_minutes' => 45,
+                'commission_percentage' => 30.00,
+                'color' => '#ff85a1',
+                'icon' => 'bi-hand-index-thumb',
+                'sort_order' => 11,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00012',
+                'name' => 'Uñas Esculpidas',
+                'description' => 'Aplicación de uñas acrílicas o gel',
+                'category_id' => $categoryNails->id,
+                'price' => 120000,
+                'tax_rate' => 10,
+                'duration_minutes' => 90,
+                'commission_percentage' => 35.00,
+                'color' => '#d63031',
+                'icon' => 'bi-star-fill',
+                'sort_order' => 12,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00013',
+                'name' => 'Pedicura Simple',
+                'description' => 'Pedicura básica con esmaltado',
+                'category_id' => $categoryNails->id,
+                'price' => 50000,
+                'tax_rate' => 10,
+                'duration_minutes' => 40,
+                'commission_percentage' => 25.00,
+                'color' => '#74b9ff',
+                'icon' => 'bi-emoji-smile',
+                'sort_order' => 13,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00014',
+                'name' => 'Pedicura con Gel',
+                'description' => 'Pedicura con esmaltado en gel',
+                'category_id' => $categoryNails->id,
+                'price' => 90000,
+                'tax_rate' => 10,
+                'duration_minutes' => 60,
+                'commission_percentage' => 30.00,
+                'color' => '#0984e3',
+                'icon' => 'bi-emoji-heart-eyes',
+                'sort_order' => 14,
+                'is_active' => true,
+            ],
+
+            // Belleza
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00015',
+                'name' => 'Depilación Facial',
+                'description' => 'Depilación de rostro con cera',
+                'category_id' => $categoryBeauty->id,
+                'price' => 30000,
+                'tax_rate' => 10,
+                'duration_minutes' => 15,
+                'commission_percentage' => 25.00,
+                'color' => '#ffeaa7',
+                'icon' => 'bi-circle',
+                'sort_order' => 15,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00016',
+                'name' => 'Depilación de Piernas',
+                'description' => 'Depilación completa de piernas',
+                'category_id' => $categoryBeauty->id,
+                'price' => 80000,
+                'tax_rate' => 10,
+                'duration_minutes' => 45,
+                'commission_percentage' => 30.00,
+                'color' => '#fdcb6e',
+                'icon' => 'bi-arrow-down',
+                'sort_order' => 16,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00017',
+                'name' => 'Depilación de Axilas',
+                'description' => 'Depilación de axilas con cera',
+                'category_id' => $categoryBeauty->id,
+                'price' => 25000,
+                'tax_rate' => 10,
+                'duration_minutes' => 15,
+                'commission_percentage' => 25.00,
+                'color' => '#fab1a0',
+                'icon' => 'bi-arrow-up',
+                'sort_order' => 17,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00018',
+                'name' => 'Maquillaje Social',
+                'description' => 'Maquillaje para eventos sociales',
+                'category_id' => $categoryBeauty->id,
+                'price' => 120000,
+                'tax_rate' => 10,
+                'duration_minutes' => 60,
+                'commission_percentage' => 30.00,
+                'color' => '#fd79a8',
+                'icon' => 'bi-palette',
+                'sort_order' => 18,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00019',
+                'name' => 'Limpieza Facial',
+                'description' => 'Limpieza profunda de cutis',
+                'category_id' => $categoryBeauty->id,
+                'price' => 100000,
+                'tax_rate' => 10,
+                'duration_minutes' => 60,
+                'commission_percentage' => 30.00,
+                'color' => '#a29bfe',
+                'icon' => 'bi-droplet',
+                'sort_order' => 19,
+                'is_active' => true,
+            ],
+            [
+                'tenant_id' => $tenantId,
+                'code' => 'SRV-00020',
+                'name' => 'Diseño de Cejas',
+                'description' => 'Perfilado y diseño de cejas',
+                'category_id' => $categoryBeauty->id,
+                'price' => 35000,
+                'tax_rate' => 10,
+                'duration_minutes' => 20,
+                'commission_percentage' => 25.00,
+                'color' => '#6c5ce7',
+                'icon' => 'bi-eyebrow',
+                'sort_order' => 20,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($services as $service) {
+            Service::firstOrCreate(
+                ['tenant_id' => $tenantId, 'code' => $service['code']],
+                $service
+            );
+        }
+
+        $this->command->info('✓ 20 servicios de ejemplo creados para salón de belleza');
+    }
+}

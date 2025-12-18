@@ -7,6 +7,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ExpenseController;
@@ -112,6 +113,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+    // Servicios
+    Route::middleware('permission:services.view')->group(function () {
+        Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
+        Route::get('/services/data', [ServiceController::class, 'data'])->name('services.data');
+        Route::get('/services/list', [ServiceController::class, 'list'])->name('services.list');
+        Route::get('/services/popular', [ServiceController::class, 'popular'])->name('services.popular');
+        Route::get('/services/{service}', [ServiceController::class, 'show'])->name('services.show');
+    });
+
+    Route::middleware('permission:services.create')->group(function () {
+        Route::get('/services/create', [ServiceController::class, 'create'])->name('services.create');
+        Route::post('/services', [ServiceController::class, 'store'])->name('services.store');
+    });
+
+    Route::middleware('permission:services.edit')->group(function () {
+        Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+        Route::put('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
+    });
+
+    Route::middleware('permission:services.delete')->group(function () {
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    });
     Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
     Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
 

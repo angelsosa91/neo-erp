@@ -166,6 +166,22 @@ class PermissionSeeder extends Seeder
             ['name' => 'Crear Categorías', 'slug' => 'categories.create', 'module' => 'categorias'],
             ['name' => 'Editar Categorías', 'slug' => 'categories.edit', 'module' => 'categorias'],
             ['name' => 'Eliminar Categorías', 'slug' => 'categories.delete', 'module' => 'categorias'],
+
+            // Servicios
+            ['name' => 'Ver Servicios', 'slug' => 'services.view', 'module' => 'servicios'],
+            ['name' => 'Crear Servicios', 'slug' => 'services.create', 'module' => 'servicios'],
+            ['name' => 'Editar Servicios', 'slug' => 'services.edit', 'module' => 'servicios'],
+            ['name' => 'Eliminar Servicios', 'slug' => 'services.delete', 'module' => 'servicios'],
+
+            // POS (Punto de Venta)
+            ['name' => 'Usar POS', 'slug' => 'pos.use', 'module' => 'pos'],
+            ['name' => 'Ver Historial POS', 'slug' => 'pos.history', 'module' => 'pos'],
+
+            // Comisiones
+            ['name' => 'Ver Comisiones', 'slug' => 'commissions.view', 'module' => 'comisiones'],
+            ['name' => 'Ver Comisiones Propias', 'slug' => 'commissions.view-own', 'module' => 'comisiones'],
+            ['name' => 'Pagar Comisiones', 'slug' => 'commissions.pay', 'module' => 'comisiones'],
+            ['name' => 'Ver Reportes de Comisiones', 'slug' => 'commissions.report', 'module' => 'comisiones'],
         ];
 
         foreach ($permissions as $permission) {
