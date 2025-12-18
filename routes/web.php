@@ -57,23 +57,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/login-history', [ProfileController::class, 'loginHistory'])->name('profile.login-history');
 
     // Usuarios
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/data', [UserController::class, 'data'])->name('users.data');
-    Route::post('/users', [UserController::class, 'store'])->name('users.store');
-    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-    
+    Route::middleware('permission:users.view')->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/data', [UserController::class, 'data'])->name('users.data');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
+    Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create')->name('users.store');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.edit')->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.edit')->name('users.toggle-status');
+
     // Roles
-    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
-    Route::get('/roles/data', [RoleController::class, 'data'])->name('roles.data');
-    Route::get('/roles/list', [RoleController::class, 'list'])->name('roles.list');
-    Route::get('/roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
-    Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
-    Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    Route::middleware('permission:roles.view')->group(function () {
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/data', [RoleController::class, 'data'])->name('roles.data');
+        Route::get('/roles/list', [RoleController::class, 'list'])->name('roles.list');
+        Route::get('/roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+        Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
+    });
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:roles.create')->name('roles.store');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('permission:roles.edit')->name('roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:roles.delete')->name('roles.destroy');
     
     // Clientes
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
@@ -303,18 +307,30 @@ Route::middleware('auth')->group(function () {
     Route::post('/checks/{check}/cancel', [CheckController::class, 'cancel'])->name('checks.cancel');
 
     // Bancos - Conciliación Bancaria
-    Route::get('/bank-reconciliations', [BankReconciliationController::class, 'index'])->name('bank-reconciliations.index');
-    Route::get('/bank-reconciliations/data', [BankReconciliationController::class, 'data'])->name('bank-reconciliations.data');
-    Route::get('/bank-reconciliations/create', [BankReconciliationController::class, 'create'])->name('bank-reconciliations.create');
-    Route::post('/bank-reconciliations', [BankReconciliationController::class, 'store'])->name('bank-reconciliations.store');
-    Route::get('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'show'])->name('bank-reconciliations.show');
-    Route::get('/bank-reconciliations/{bankReconciliation}/edit', [BankReconciliationController::class, 'edit'])->name('bank-reconciliations.edit');
-    Route::put('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'update'])->name('bank-reconciliations.update');
-    Route::delete('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'destroy'])->name('bank-reconciliations.destroy');
-    Route::post('/bank-reconciliations/{bankReconciliation}/post', [BankReconciliationController::class, 'post'])->name('bank-reconciliations.post');
-    Route::post('/bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
-    Route::get('/bank-reconciliations/{bankReconciliation}/report', [BankReconciliationController::class, 'report'])->name('bank-reconciliations.report');
-    Route::get('/bank-reconciliations-unreconciled-transactions', [BankReconciliationController::class, 'getUnreconciledTransactions'])->name('bank-reconciliations.unreconciled-transactions');
+    Route::middleware('permission:bank-reconciliations.view')->group(function () {
+        Route::get('/bank-reconciliations', [BankReconciliationController::class, 'index'])->name('bank-reconciliations.index');
+        Route::get('/bank-reconciliations/data', [BankReconciliationController::class, 'data'])->name('bank-reconciliations.data');
+        Route::get('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'show'])->name('bank-reconciliations.show');
+        Route::get('/bank-reconciliations/{bankReconciliation}/report', [BankReconciliationController::class, 'report'])->name('bank-reconciliations.report');
+        Route::get('/bank-reconciliations-unreconciled-transactions', [BankReconciliationController::class, 'getUnreconciledTransactions'])->name('bank-reconciliations.unreconciled-transactions');
+    });
+    Route::middleware('permission:bank-reconciliations.create')->group(function () {
+        Route::get('/bank-reconciliations/create', [BankReconciliationController::class, 'create'])->name('bank-reconciliations.create');
+        Route::post('/bank-reconciliations', [BankReconciliationController::class, 'store'])->name('bank-reconciliations.store');
+    });
+    Route::middleware('permission:bank-reconciliations.edit')->group(function () {
+        Route::get('/bank-reconciliations/{bankReconciliation}/edit', [BankReconciliationController::class, 'edit'])->name('bank-reconciliations.edit');
+        Route::put('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'update'])->name('bank-reconciliations.update');
+    });
+    Route::post('/bank-reconciliations/{bankReconciliation}/post', [BankReconciliationController::class, 'post'])
+        ->middleware('permission:bank-reconciliations.post')
+        ->name('bank-reconciliations.post');
+    Route::post('/bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])
+        ->middleware('permission:bank-reconciliations.cancel')
+        ->name('bank-reconciliations.cancel');
+    Route::delete('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'destroy'])
+        ->middleware('permission:bank-reconciliations.delete')
+        ->name('bank-reconciliations.destroy');
 
     // Contabilidad - Plan de Cuentas
     Route::get('/account-chart', [AccountChartController::class, 'index'])->name('account-chart.index');
