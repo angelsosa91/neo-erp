@@ -605,10 +605,10 @@
             checkoutModal = new bootstrap.Modal(document.getElementById('checkoutModal'));
         });
 
-        // Cargar servicios desde API
+        // Cargar items (servicios + productos) desde API
         function loadServices() {
             $.ajax({
-                url: '{{ route('services.popular') }}',
+                url: '{{ route('pos.items') }}',
                 method: 'GET',
                 success: function(response) {
                     allServices = response;
@@ -618,7 +618,7 @@
                     $('#services-grid').html(
                         '<div class="loading">' +
                         '<i class="bi bi-exclamation-triangle text-danger"></i>' +
-                        '<p>Error al cargar servicios</p>' +
+                        '<p>Error al cargar items</p>' +
                         '</div>'
                     );
                 }
@@ -631,7 +631,7 @@
                 $('#services-grid').html(
                     '<div class="loading">' +
                     '<i class="bi bi-inbox"></i>' +
-                    '<p>No hay servicios disponibles</p>' +
+                    '<p>No hay servicios o productos disponibles</p>' +
                     '</div>'
                 );
                 return;
@@ -639,9 +639,11 @@
 
             let html = '';
             services.forEach(service => {
-                const color = service.color || '#667eea';
-                const icon = service.icon || 'bi-star-fill';
+                const isProduct = service.type === 'product';
+                const color = service.color || (isProduct ? '#3498db' : '#667eea');
+                const icon = service.icon || (isProduct ? 'bi-box-seam' : 'bi-star-fill');
                 const duration = service.formatted_duration || '';
+                const stockInfo = isProduct && service.stock ? `Stock: ${service.stock}` : '';
 
                 html += `
                     <div class="service-card"
@@ -652,10 +654,12 @@
                                 <i class="bi ${icon}"></i>
                             </div>
                             <div class="name">${service.name}</div>
+                            ${isProduct ? '<small class="text-muted">Producto</small>' : ''}
                         </div>
                         <div>
                             <div class="price">₲ ${formatNumber(service.price)}</div>
                             ${duration ? `<div class="duration">${duration}</div>` : ''}
+                            ${stockInfo ? `<small class="text-muted">${stockInfo}</small>` : ''}
                         </div>
                     </div>
                 `;
@@ -682,22 +686,24 @@
             renderServices(filtered);
         });
 
-        // Agregar servicio al carrito
+        // Agregar item (servicio o producto) al carrito
         function addToCart(serviceId) {
             const service = allServices.find(s => s.id === serviceId);
             if (!service) return;
 
             // Verificar si ya está en el carrito
-            const existingItem = cart.find(item => item.id === serviceId);
+            const existingItem = cart.find(item => item.id === serviceId && item.type === service.type);
 
             if (existingItem) {
                 existingItem.quantity++;
             } else {
                 cart.push({
                     id: service.id,
+                    type: service.type,
                     name: service.name,
                     price: parseFloat(service.price),
                     tax_rate: parseInt(service.tax_rate),
+                    stock: service.stock || null,
                     quantity: 1
                 });
             }
@@ -905,7 +911,8 @@
             // Preparar datos de la venta
             const saleData = {
                 items: cart.map(item => ({
-                    service_id: item.id,
+                    type: item.type,
+                    id: item.id,
                     quantity: item.quantity,
                     unit_price: item.price,
                     tax_rate: item.tax_rate

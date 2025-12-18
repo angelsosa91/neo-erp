@@ -77,10 +77,13 @@ Route::middleware('auth')->group(function () {
             return view('pos.index');
         })->name('pos.index');
 
+        // Obtener items (servicios + productos) para el POS
+        Route::get('/pos/items', [PosAuthController::class, 'items'])->name('pos.items');
+
         // Procesar venta desde POS
         Route::post('/pos/sales', [PosAuthController::class, 'storeSale'])->name('pos.sales.store');
 
-        // Servicios populares para el POS (sin requerir permission:services.view)
+        // Servicios populares para el POS (sin requerir permission:services.view) - DEPRECATED: usar /pos/items
         Route::get('/services/popular', [ServiceController::class, 'popular'])->name('services.popular');
     });
 });

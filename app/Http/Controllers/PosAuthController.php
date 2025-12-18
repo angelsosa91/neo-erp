@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\PosSession;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -243,13 +246,69 @@ class PosAuthController extends Controller
     }
 
     /**
+     * Obtener items (servicios + productos) para el POS
+     */
+    public function items(Request $request)
+    {
+        $limit = $request->get('limit', 50);
+        $user = $request->user();
+
+        // Obtener servicios activos ordenados por sort_order
+        $services = Service::where('tenant_id', $user->tenant_id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->limit($limit)
+            ->get()
+            ->map(function ($service) {
+                return [
+                    'id' => $service->id,
+                    'type' => 'service',
+                    'name' => $service->name,
+                    'price' => $service->price,
+                    'tax_rate' => $service->tax_rate,
+                    'color' => $service->color,
+                    'icon' => $service->icon,
+                    'formatted_duration' => $service->formatted_duration,
+                ];
+            });
+
+        // Obtener productos activos con stock
+        $products = Product::where('tenant_id', $user->tenant_id)
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->orderBy('name')
+            ->limit($limit)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'type' => 'product',
+                    'name' => $product->name,
+                    'price' => $product->sale_price,
+                    'tax_rate' => $product->tax_rate,
+                    'stock' => $product->stock,
+                    'color' => null,
+                    'icon' => null,
+                    'formatted_duration' => null,
+                ];
+            });
+
+        // Combinar servicios y productos
+        $items = $services->concat($products);
+
+        return response()->json($items->values());
+    }
+
+    /**
      * Procesar una venta desde el POS
      */
     public function storeSale(Request $request)
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.service_id' => 'required|exists:services,id',
+            'items.*.type' => 'required|string|in:service,product',
+            'items.*.id' => 'required|integer',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.tax_rate' => 'required|integer|in:0,5,10',
@@ -278,21 +337,58 @@ class PosAuthController extends Controller
 
             // Crear los items de la venta
             foreach ($validated['items'] as $itemData) {
-                $service = \App\Models\Service::find($itemData['service_id']);
+                if ($itemData['type'] === 'service') {
+                    // Item de servicio
+                    $service = Service::find($itemData['id']);
 
-                \App\Models\SaleServiceItem::create([
-                    'sale_id' => $sale->id,
-                    'service_id' => $service->id,
-                    'service_name' => $service->name,
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'tax_rate' => $itemData['tax_rate'],
-                    'commission_percentage' => $service->commission_percentage,
-                ]);
+                    if (!$service || $service->tenant_id !== $user->tenant_id) {
+                        throw new \Exception('Servicio no encontrado o no pertenece al tenant');
+                    }
+
+                    \App\Models\SaleServiceItem::create([
+                        'sale_id' => $sale->id,
+                        'service_id' => $service->id,
+                        'service_name' => $service->name,
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'tax_rate' => $itemData['tax_rate'],
+                        'commission_percentage' => $service->commission_percentage,
+                    ]);
+                } else {
+                    // Item de producto
+                    $product = Product::find($itemData['id']);
+
+                    if (!$product || $product->tenant_id !== $user->tenant_id) {
+                        throw new \Exception('Producto no encontrado o no pertenece al tenant');
+                    }
+
+                    // Verificar stock disponible
+                    if ($product->track_stock && $product->stock < $itemData['quantity']) {
+                        throw new \Exception("Stock insuficiente para el producto {$product->name}");
+                    }
+
+                    $saleItem = \App\Models\SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'tax_rate' => $itemData['tax_rate'],
+                    ]);
+
+                    // Calcular valores del item
+                    $saleItem->calculateValues();
+                    $saleItem->save();
+
+                    // Descontar stock
+                    if ($product->track_stock) {
+                        $product->decrement('stock', $itemData['quantity']);
+                    }
+                }
             }
 
             // Cargar los items y calcular totales
-            $sale->load('serviceItems');
+            $sale->load(['items', 'serviceItems']);
             $sale->calculateTotals();
             $sale->save();
 
