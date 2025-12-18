@@ -79,6 +79,9 @@ Route::middleware('auth')->group(function () {
 
         // Procesar venta desde POS
         Route::post('/pos/sales', [PosAuthController::class, 'storeSale'])->name('pos.sales.store');
+
+        // Servicios populares para el POS (sin requerir permission:services.view)
+        Route::get('/services/popular', [ServiceController::class, 'popular'])->name('services.popular');
     });
 });
 
@@ -165,7 +168,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
         Route::get('/services/data', [ServiceController::class, 'data'])->name('services.data');
         Route::get('/services/list', [ServiceController::class, 'list'])->name('services.list');
-        Route::get('/services/popular', [ServiceController::class, 'popular'])->name('services.popular');
+        // Route popular movida al grupo POS para acceso con permission:pos.use
         Route::get('/services/{service}', [ServiceController::class, 'show'])->name('services.show');
     });
 
