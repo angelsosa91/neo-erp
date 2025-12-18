@@ -241,4 +241,84 @@ class PosAuthController extends Controller
                 $session->close();
             });
     }
+
+    /**
+     * Procesar una venta desde el POS
+     */
+    public function storeSale(Request $request)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.service_id' => 'required|exists:services,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.tax_rate' => 'required|integer|in:0,5,10',
+            'payment_method' => 'required|string|in:efectivo,tarjeta,transferencia',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            $user = $request->user();
+            $sessionToken = session('pos_session_token');
+            $posSession = PosSession::where('session_token', $sessionToken)->first();
+
+            // Crear la venta
+            $sale = Sale::create([
+                'tenant_id' => $user->tenant_id,
+                'user_id' => $user->id,
+                'pos_session_id' => $posSession?->id,
+                'sale_number' => Sale::generateSaleNumber($user->tenant_id),
+                'sale_date' => now()->toDateString(),
+                'payment_method' => $validated['payment_method'],
+                'notes' => $validated['notes'] ?? null,
+                'status' => 'confirmed',
+            ]);
+
+            // Crear los items de la venta
+            foreach ($validated['items'] as $itemData) {
+                $service = \App\Models\Service::find($itemData['service_id']);
+
+                \App\Models\SaleServiceItem::create([
+                    'sale_id' => $sale->id,
+                    'service_id' => $service->id,
+                    'service_name' => $service->name,
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'tax_rate' => $itemData['tax_rate'],
+                    'commission_percentage' => $service->commission_percentage,
+                ]);
+            }
+
+            // Cargar los items y calcular totales
+            $sale->load('serviceItems');
+            $sale->calculateTotals();
+            $sale->save();
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta procesada exitosamente',
+                'sale' => [
+                    'id' => $sale->id,
+                    'sale_number' => $sale->sale_number,
+                    'total' => $sale->total,
+                    'subtotal_exento' => $sale->subtotal_exento,
+                    'subtotal_5' => $sale->subtotal_5,
+                    'iva_5' => $sale->iva_5,
+                    'subtotal_10' => $sale->subtotal_10,
+                    'iva_10' => $sale->iva_10,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la venta: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

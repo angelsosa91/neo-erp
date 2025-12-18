@@ -15,6 +15,7 @@ class Sale extends Model
         'tenant_id',
         'customer_id',
         'user_id',
+        'pos_session_id',
         'sale_number',
         'sale_date',
         'subtotal_exento',
@@ -60,11 +61,27 @@ class Sale extends Model
     }
 
     /**
+     * Relación con la sesión POS (si fue creada desde POS)
+     */
+    public function posSession(): BelongsTo
+    {
+        return $this->belongsTo(PosSession::class);
+    }
+
+    /**
      * Relación con los items de la venta
      */
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Relación con los servicios vendidos
+     */
+    public function serviceItems(): HasMany
+    {
+        return $this->hasMany(SaleServiceItem::class);
     }
 
     /**
@@ -119,7 +136,7 @@ class Sale extends Model
     }
 
     /**
-     * Calcular totales basado en los items
+     * Calcular totales basado en los items (productos y servicios)
      */
     public function calculateTotals(): void
     {
@@ -129,7 +146,10 @@ class Sale extends Model
         $subtotal10 = 0;
         $iva10 = 0;
 
-        foreach ($this->items as $item) {
+        // Combinar items de productos y servicios
+        $allItems = $this->items->merge($this->serviceItems);
+
+        foreach ($allItems as $item) {
             switch ($item->tax_rate) {
                 case 0:
                     $subtotalExento += $item->subtotal;

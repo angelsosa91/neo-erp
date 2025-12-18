@@ -76,6 +76,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/pos', function () {
             return view('pos.index');
         })->name('pos.index');
+
+        // Procesar venta desde POS
+        Route::post('/pos/sales', [PosAuthController::class, 'storeSale'])->name('pos.sales.store');
     });
 });
 
