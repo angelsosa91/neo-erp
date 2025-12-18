@@ -258,6 +258,9 @@ class PurchaseController extends Controller
                     throw new \Exception('Saldo insuficiente en cuenta bancaria. Disponible: ' . number_format($defaultAccount->current_balance, 0, ',', '.') . ' Gs.');
                 }
 
+                // Calcular el balance después de la transacción
+                $balanceAfter = $defaultAccount->current_balance - $purchase->total;
+
                 // Crear transacción bancaria
                 BankTransaction::create([
                     'tenant_id' => Auth::user()->tenant_id,
@@ -266,14 +269,16 @@ class PurchaseController extends Controller
                     'transaction_date' => $purchase->purchase_date,
                     'type' => 'withdrawal',
                     'amount' => $purchase->total,
+                    'concept' => 'Compra por transferencia',
                     'description' => 'Compra ' . $purchase->purchase_number . ' - ' . $purchase->supplier->name,
                     'reference' => $purchase->purchase_number,
+                    'balance_after' => $balanceAfter,
+                    'user_id' => Auth::id(),
                     'status' => 'completed',
                     'reconciled' => false,
                 ]);
 
-                // Actualizar saldo de cuenta bancaria
-                $defaultAccount->updateBalance();
+                // El saldo se actualiza automáticamente por el evento created del modelo
             }
 
             // Crear asiento contable automático

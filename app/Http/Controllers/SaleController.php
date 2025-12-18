@@ -295,6 +295,9 @@ class SaleController extends Controller
                     throw new \Exception('Debe configurar una cuenta bancaria predeterminada para registrar transferencias');
                 }
 
+                // Calcular el balance después de la transacción
+                $balanceAfter = $defaultAccount->current_balance + $sale->total;
+
                 // Crear transacción bancaria
                 BankTransaction::create([
                     'tenant_id' => Auth::user()->tenant_id,
@@ -303,14 +306,16 @@ class SaleController extends Controller
                     'transaction_date' => $sale->sale_date,
                     'type' => 'deposit',
                     'amount' => $sale->total,
+                    'concept' => 'Venta por transferencia',
                     'description' => 'Venta ' . $sale->sale_number . ($sale->customer_id ? ' - ' . $sale->customer->name : ''),
                     'reference' => $sale->sale_number,
+                    'balance_after' => $balanceAfter,
+                    'user_id' => Auth::id(),
                     'status' => 'completed',
                     'reconciled' => false,
                 ]);
 
-                // Actualizar saldo de cuenta bancaria
-                $defaultAccount->updateBalance();
+                // El saldo se actualiza automáticamente por el evento created del modelo
             }
 
             // Crear asiento contable automático
