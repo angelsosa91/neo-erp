@@ -201,6 +201,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales/{sale}/detail', [SaleController::class, 'detail'])->name('sales.detail');
     Route::get('/sales/{sale}/pdf', [SaleController::class, 'generatePDF'])->name('sales.pdf');
     Route::get('/sales/{sale}/download-pdf', [SaleController::class, 'downloadPDF'])->name('sales.download-pdf');
+    Route::post('/sales/{sale}/update-customer', [SaleController::class, 'updateCustomer'])->name('sales.update-customer');
     Route::post('/sales/{sale}/confirm', [SaleController::class, 'confirm'])->name('sales.confirm');
     Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
     Route::delete('/sales/{sale}', [SaleController::class, 'destroy'])->name('sales.destroy');

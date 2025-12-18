@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\PosSession;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\SaleServiceItem;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PosAuthController extends Controller
 {
@@ -317,13 +320,13 @@ class PosAuthController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             $user = $request->user();
             $sessionToken = session('pos_session_token');
             $posSession = PosSession::where('session_token', $sessionToken)->first();
 
-            // Crear la venta
+            // Crear la pre-venta (borrador)
             $sale = Sale::create([
                 'tenant_id' => $user->tenant_id,
                 'user_id' => $user->id,
@@ -332,7 +335,7 @@ class PosAuthController extends Controller
                 'sale_date' => now()->toDateString(),
                 'payment_method' => $validated['payment_method'],
                 'notes' => $validated['notes'] ?? null,
-                'status' => 'confirmed',
+                'status' => 'draft', // Pre-venta - debe confirmarse después
             ]);
 
             // Crear los items de la venta
@@ -345,7 +348,7 @@ class PosAuthController extends Controller
                         throw new \Exception('Servicio no encontrado o no pertenece al tenant');
                     }
 
-                    \App\Models\SaleServiceItem::create([
+                    SaleServiceItem::create([
                         'sale_id' => $sale->id,
                         'service_id' => $service->id,
                         'service_name' => $service->name,
@@ -362,12 +365,12 @@ class PosAuthController extends Controller
                         throw new \Exception('Producto no encontrado o no pertenece al tenant');
                     }
 
-                    // Verificar stock disponible
+                    // Verificar stock disponible (solo advertencia, no se descuenta aún)
                     if ($product->track_stock && $product->stock < $itemData['quantity']) {
                         throw new \Exception("Stock insuficiente para el producto {$product->name}");
                     }
 
-                    $saleItem = \App\Models\SaleItem::create([
+                    $saleItem = SaleItem::create([
                         'sale_id' => $sale->id,
                         'product_id' => $product->id,
                         'product_name' => $product->name,
@@ -380,10 +383,8 @@ class PosAuthController extends Controller
                     $saleItem->calculateValues();
                     $saleItem->save();
 
-                    // Descontar stock
-                    if ($product->track_stock) {
-                        $product->decrement('stock', $itemData['quantity']);
-                    }
+                    // NO se descuenta stock en pre-venta
+                    // El stock se descontará cuando se confirme la venta
                 }
             }
 
@@ -392,14 +393,15 @@ class PosAuthController extends Controller
             $sale->calculateTotals();
             $sale->save();
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Venta procesada exitosamente',
+                'message' => 'Pre-venta creada exitosamente. Debe confirmarse para descontar stock.',
                 'sale' => [
                     'id' => $sale->id,
                     'sale_number' => $sale->sale_number,
+                    'status' => $sale->status,
                     'total' => $sale->total,
                     'subtotal_exento' => $sale->subtotal_exento,
                     'subtotal_5' => $sale->subtotal_5,
@@ -409,7 +411,7 @@ class PosAuthController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
 
             return response()->json([
                 'success' => false,

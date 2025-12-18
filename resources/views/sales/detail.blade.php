@@ -50,7 +50,12 @@
             </div>
             <div class="col-md-3">
                 <strong>Cliente:</strong><br>
-                {{ $sale->customer ? $sale->customer->name : 'Sin cliente' }}
+                <span id="customer-display">{{ $sale->customer ? $sale->customer->name : 'Sin cliente' }}</span>
+                @if($sale->status === 'draft' && !$sale->customer_id)
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="assignCustomer()">
+                    <i class="bi bi-person-plus"></i> Asignar
+                </button>
+                @endif
             </div>
             <div class="col-md-3">
                 <strong>Estado:</strong><br>
@@ -137,7 +142,8 @@
         <table class="table table-bordered table-striped">
             <thead class="table-light">
                 <tr>
-                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
                     <th class="text-end">Cantidad</th>
                     <th class="text-end">Precio</th>
                     <th class="text-center">IVA</th>
@@ -147,7 +153,18 @@
             <tbody>
                 @foreach($sale->items as $item)
                 <tr>
+                    <td><span class="badge bg-primary">Producto</span></td>
                     <td>{{ $item->product_name }}</td>
+                    <td class="text-end">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                    <td class="text-end">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                    <td class="text-center">{{ $item->tax_rate }}%</td>
+                    <td class="text-end">{{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                </tr>
+                @endforeach
+                @foreach($sale->serviceItems as $item)
+                <tr>
+                    <td><span class="badge bg-info">Servicio</span></td>
+                    <td>{{ $item->service_name }}</td>
                     <td class="text-end">{{ number_format($item->quantity, 2, ',', '.') }}</td>
                     <td class="text-end">{{ number_format($item->unit_price, 0, ',', '.') }}</td>
                     <td class="text-center">{{ $item->tax_rate }}%</td>
@@ -245,5 +262,76 @@ function cancelSale() {
         }
     });
 }
+
+function assignCustomer() {
+    $('#dlg-assign-customer').dialog('open');
+}
+
+$(function() {
+    $('#dlg-assign-customer').dialog({
+        title: 'Asignar Cliente',
+        width: 500,
+        height: 250,
+        closed: true,
+        modal: true,
+        buttons: [{
+            text: 'Asignar',
+            iconCls: 'icon-ok',
+            handler: function() {
+                var customerId = $('#customer-select').combobox('getValue');
+                if (!customerId) {
+                    $.messager.alert('Error', 'Debe seleccionar un cliente', 'error');
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route('sales.update-customer', $sale) }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        customer_id: customerId
+                    },
+                    success: function(response) {
+                        $.messager.alert('Éxito', response.message, 'info', function() {
+                            location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        var errors = xhr.responseJSON.errors;
+                        var message = '';
+                        for (var key in errors) {
+                            message += errors[key].join('<br>') + '<br>';
+                        }
+                        $.messager.alert('Error', message, 'error');
+                    }
+                });
+            }
+        }, {
+            text: 'Cancelar',
+            handler: function() {
+                $('#dlg-assign-customer').dialog('close');
+            }
+        }]
+    });
+});
 </script>
+
+<!-- Modal para asignar cliente -->
+<div id="dlg-assign-customer" style="padding: 20px;">
+    <div class="form-group">
+        <label for="customer-select">Cliente:</label>
+        <input id="customer-select" class="easyui-combobox" style="width:100%"
+               data-options="
+                   url: '{{ route('customers.list') }}',
+                   method: 'get',
+                   valueField: 'id',
+                   textField: 'name',
+                   panelHeight: 'auto',
+                   editable: true,
+                   required: true
+               ">
+    </div>
+</div>
 @endsection

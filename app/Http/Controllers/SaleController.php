@@ -184,23 +184,67 @@ class SaleController extends Controller
      */
     public function show(Sale $sale)
     {
-        $sale->load(['customer', 'user', 'items.product']);
+        $sale->load(['customer', 'user', 'items.product', 'serviceItems.service']);
+
+        $productItems = $sale->items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'type' => 'product',
+                'product_id' => $item->product_id,
+                'name' => $item->product_name,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'tax_rate' => $item->tax_rate,
+                'subtotal' => $item->subtotal,
+                'tax_amount' => $item->tax_amount,
+                'total' => $item->total,
+            ];
+        });
+
+        $serviceItems = $sale->serviceItems->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'type' => 'service',
+                'service_id' => $item->service_id,
+                'name' => $item->service_name,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'tax_rate' => $item->tax_rate,
+                'subtotal' => $item->subtotal,
+                'tax_amount' => $item->tax_amount,
+                'total' => $item->total,
+                'commission_percentage' => $item->commission_percentage,
+            ];
+        });
 
         return response()->json([
             'sale' => $sale,
-            'items' => $sale->items->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product_name,
-                    'quantity' => $item->quantity,
-                    'unit_price' => $item->unit_price,
-                    'tax_rate' => $item->tax_rate,
-                    'subtotal' => $item->subtotal,
-                    'tax_amount' => $item->tax_amount,
-                    'total' => $item->total,
-                ];
-            })
+            'items' => $productItems->merge($serviceItems)
+        ]);
+    }
+
+    /**
+     * Actualizar cliente de una pre-venta
+     */
+    public function updateCustomer(Request $request, Sale $sale)
+    {
+        if ($sale->status !== 'draft') {
+            return response()->json([
+                'errors' => ['general' => ['Solo se puede asignar cliente a ventas en borrador']]
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+        ]);
+
+        $sale->customer_id = $validated['customer_id'];
+        $sale->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cliente asignado correctamente',
+            'sale' => $sale->load('customer')
         ]);
     }
 
@@ -227,24 +271,9 @@ class SaleController extends Controller
                 }
             }
 
-            // Verificar stock disponible
-            foreach ($sale->items as $item) {
-                if ($item->product && $item->product->track_stock) {
-                    if ($item->product->stock < $item->quantity) {
-                        throw new \Exception("Stock insuficiente para {$item->product_name}. Disponible: {$item->product->stock}");
-                    }
-                }
-            }
-
-            // Descontar stock
-            foreach ($sale->items as $item) {
-                if ($item->product && $item->product->track_stock) {
-                    $item->product->decrement('stock', $item->quantity);
-                }
-            }
-
-            $sale->status = 'confirmed';
-            $sale->save();
+            // Usar el método confirm del modelo que maneja tanto productos como servicios
+            $sale->load(['items.product', 'serviceItems']);
+            $sale->confirm();
 
             // Si es venta a crédito, crear cuenta por cobrar
             if ($sale->payment_type === 'credit' && $sale->customer_id) {

@@ -174,11 +174,52 @@ class Sale extends Model
     }
 
     /**
+     * Confirmar una pre-venta (cambiar de draft a confirmed y descontar stock)
+     */
+    public function confirm(): bool
+    {
+        if ($this->status !== 'draft') {
+            throw new \Exception('Solo se pueden confirmar ventas en estado borrador');
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Descontar stock de los productos
+            foreach ($this->items as $item) {
+                if ($item->product && $item->product->track_stock) {
+                    if ($item->product->stock < $item->quantity) {
+                        throw new \Exception("Stock insuficiente para el producto {$item->product_name}");
+                    }
+                    $item->product->decrement('stock', $item->quantity);
+                }
+            }
+
+            // Cambiar estado a confirmada
+            $this->status = 'confirmed';
+            $this->save();
+
+            \DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Verificar si la venta puede ser anulada
      */
     public function canBeCancelled(): bool
     {
         return $this->status !== 'cancelled';
+    }
+
+    /**
+     * Verificar si la venta puede ser confirmada
+     */
+    public function canBeConfirmed(): bool
+    {
+        return $this->status === 'draft';
     }
 
     /**

@@ -935,7 +935,7 @@
                         checkoutModal.hide();
 
                         // Mostrar mensaje de éxito
-                        alert('Venta procesada exitosamente!\n\nNúmero de venta: ' + response.sale.sale_number + '\nTotal: ₲ ' + formatNumber(response.sale.total));
+                        alert('Pre-venta creada exitosamente!\n\nNúmero: ' + response.sale.sale_number + '\nTotal: ₲ ' + formatNumber(response.sale.total) + '\n\nEstado: BORRADOR\n\nDebe confirmarse desde el módulo de Ventas para descontar stock.');
 
                         // Limpiar carrito
                         cart = [];
