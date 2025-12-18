@@ -32,6 +32,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\RemissionController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\PosAuthController;
 use Illuminate\Support\Facades\Route;
 
 // Rutas publicas
@@ -46,6 +47,37 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+// ========================================
+// Rutas POS - Autenticación
+// ========================================
+Route::middleware('auth')->group(function () {
+    // Login POS (pantalla de PIN)
+    Route::get('/pos/login', [PosAuthController::class, 'showLogin'])->name('pos.login');
+    Route::post('/pos/login', [PosAuthController::class, 'login'])->name('pos.login.post');
+
+    // Verificación RFID (2FA)
+    Route::get('/pos/rfid', function () {
+        if (!session('pos_pin_verified')) {
+            return redirect()->route('pos.login');
+        }
+        return view('pos.rfid');
+    })->name('pos.rfid.verify.view');
+    Route::post('/pos/rfid', [PosAuthController::class, 'verifyRfid'])->name('pos.rfid.verify');
+
+    // Logout POS
+    Route::post('/pos/logout', [PosAuthController::class, 'logout'])->name('pos.logout');
+
+    // Check session (para polling de timeout)
+    Route::post('/pos/check-session', [PosAuthController::class, 'checkSession'])->name('pos.check.session');
+
+    // POS Interface (protegido por middleware check.pos.session)
+    Route::middleware(['check.pos.session', 'permission:pos.use'])->group(function () {
+        Route::get('/pos', function () {
+            return view('pos.index');
+        })->name('pos.index');
+    });
+});
 
 // Rutas protegidas
 Route::middleware('auth')->group(function () {
@@ -67,6 +99,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.edit')->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.edit')->name('users.toggle-status');
+
+    // Gestión POS del usuario
+    Route::middleware('permission:users.edit')->group(function () {
+        Route::put('/users/{user}/pos-config', [UserController::class, 'updatePosConfig'])->name('users.update-pos-config');
+        Route::post('/users/{user}/pos-pin', [UserController::class, 'setPosPin'])->name('users.set-pos-pin');
+        Route::delete('/users/{user}/pos-pin', [UserController::class, 'removePosPin'])->name('users.remove-pos-pin');
+    });
 
     // Roles
     Route::middleware('permission:roles.view')->group(function () {

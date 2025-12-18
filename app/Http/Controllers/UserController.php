@@ -159,4 +159,65 @@ class UserController extends Controller
             'message' => $user->is_active ? 'Usuario activado' : 'Usuario desactivado',
         ]);
     }
+
+    /**
+     * Actualizar configuración POS del usuario
+     */
+    public function updatePosConfig(Request $request, User $user)
+    {
+        $request->validate([
+            'pos_enabled' => 'boolean',
+            'pos_require_rfid' => 'boolean',
+            'rfid_code' => 'nullable|string|max:100|unique:users,rfid_code,' . $user->id,
+            'commission_percentage' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $user->update([
+            'pos_enabled' => $request->has('pos_enabled'),
+            'pos_require_rfid' => $request->has('pos_require_rfid'),
+            'rfid_code' => $request->rfid_code,
+            'commission_percentage' => $request->commission_percentage,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Configuración POS actualizada correctamente',
+        ]);
+    }
+
+    /**
+     * Establecer/Actualizar PIN del POS
+     */
+    public function setPosPin(Request $request, User $user)
+    {
+        $request->validate([
+            'pin' => 'required|string|min:4|max:6|regex:/^[0-9]+$/',
+            'pin_confirmation' => 'required|same:pin',
+        ], [
+            'pin.regex' => 'El PIN debe contener solo números',
+            'pin.min' => 'El PIN debe tener al menos 4 dígitos',
+            'pin.max' => 'El PIN no puede tener más de 6 dígitos',
+            'pin_confirmation.same' => 'Los PINs no coinciden',
+        ]);
+
+        $user->setPosPin($request->pin);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PIN establecido correctamente',
+        ]);
+    }
+
+    /**
+     * Eliminar PIN del POS
+     */
+    public function removePosPin(User $user)
+    {
+        $user->update(['pos_pin' => null]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PIN eliminado correctamente',
+        ]);
+    }
 }
