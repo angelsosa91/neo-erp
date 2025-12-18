@@ -406,13 +406,29 @@ DELETE /users/{user}/pos-pin       → UserController@removePosPin
 
 ## 9. Flujo de Autenticación Completo
 
-### Escenario 1: Login Solo con PIN
+### Escenario 1: Vendedor Login Directo (AUTO-LOGIN) ⚡
 
 ```
-1. Usuario abre /pos/login
-2. Sistema muestra teclado numérico
-3. Usuario ingresa PIN (ej: 1234)
-4. Click en OK
+1. Vendedor hace login con email/password
+2. LoginController detecta rol 'vendedor'
+3. Redirige a /pos (NO a /pos/login)
+4. CheckPosSession middleware detecta:
+   - Usuario vendedor ✓
+   - Sin sesión POS ✓
+5. Crea automáticamente PosSession (method='auto-login')
+6. Guarda token en session
+7. Vendedor accede al POS DIRECTO
+   - Sin pantalla de PIN ⚡
+   - Sin redundancia
+```
+
+### Escenario 2: Admin abre POS desde menú (CON PIN)
+
+```
+1. Admin hace login con email/password → Dashboard
+2. Click en "Punto de Venta" en menú
+3. Abre /pos/login (pantalla PIN)
+4. CUALQUIER vendedor puede ingresar su PIN (ej: 1234)
 5. Sistema verifica:
    - PIN correcto ✓
    - Usuario activo ✓
@@ -422,14 +438,15 @@ DELETE /users/{user}/pos-pin       → UserController@removePosPin
 6. Crea PosSession (method='pin')
 7. Guarda token en session
 8. Redirige a /pos
+9. Al cerrar POS → Vuelve al Dashboard del admin
 ```
 
-### Escenario 2: Login con 2FA (PIN + RFID)
+### Escenario 3: Login con 2FA (PIN + RFID)
 
 ```
-1. Usuario abre /pos/login
+1. Admin abre /pos/login desde menú
 2. Sistema muestra teclado numérico
-3. Usuario ingresa PIN (ej: 1234)
+3. Vendedor ingresa PIN (ej: 1234)
 4. Click en OK
 5. Sistema verifica:
    - PIN correcto ✓
@@ -439,7 +456,7 @@ DELETE /users/{user}/pos-pin       → UserController@removePosPin
    - Requiere RFID ✓
 6. Guarda en session temporal: pos_pin_verified=true
 7. Redirige a /pos/rfid
-8. Usuario acerca tarjeta RFID
+8. Vendedor acerca tarjeta RFID
 9. Lector envía código al input
 10. Sistema verifica:
     - Sesión PIN verificada ✓
@@ -449,7 +466,7 @@ DELETE /users/{user}/pos-pin       → UserController@removePosPin
 13. Redirige a /pos
 ```
 
-### Escenario 3: Sesión Expira por Inactividad
+### Escenario 4: Sesión Expira por Inactividad
 
 ```
 1. Usuario está en /pos
@@ -462,7 +479,7 @@ DELETE /users/{user}/pos-pin       → UserController@removePosPin
 8. Redirige a /pos/login
 ```
 
-### Escenario 4: Usuario Cierra Sesión
+### Escenario 5: Usuario Cierra Sesión
 
 ```
 1. Usuario click en "Cerrar Sesión"

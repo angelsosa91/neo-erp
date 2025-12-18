@@ -325,6 +325,16 @@
             <!-- OPERACIONES -->
             <div class="menu-section-title">Operaciones</div>
 
+            <!-- POS -->
+            @canany(['pos.use'])
+            <li>
+                <a href="{{ route('pos.login') }}" class="{{ request()->routeIs('pos.*') ? 'active' : '' }}">
+                    <i class="bi bi-shop"></i>
+                    <span class="menu-text">Punto de Venta</span>
+                </a>
+            </li>
+            @endcanany
+
             <!-- Ventas -->
             <li class="has-submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'active' : '' }}">

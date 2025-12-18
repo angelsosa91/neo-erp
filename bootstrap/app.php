@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'check.pos.session' => \App\Http\Middleware\CheckPosSession::class,
+            'dashboard.access' => \App\Http\Middleware\CheckDashboardAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

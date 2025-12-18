@@ -41,7 +41,9 @@ class LoginController extends Controller
             LoginLog::logSuccess($user, $request);
 
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard');
+
+            // Redirigir según el rol del usuario
+            return redirect()->intended($this->redirectPath($user));
         }
 
         // Registrar intento fallido (credenciales inválidas)
@@ -57,7 +59,22 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/');
+    }
+
+    /**
+     * Determinar la ruta de redirección según el rol del usuario
+     */
+    protected function redirectPath($user): string
+    {
+        // VENDEDOR → POS directo (sin pantalla de PIN)
+        // Ya están autenticados con email/password, van directo al POS
+        if ($user->hasRole('vendedor')) {
+            return '/pos';
+        }
+
+        // Todos los demás (Admin, Super Admin, otros roles) → Dashboard
+        return '/dashboard';
     }
 }

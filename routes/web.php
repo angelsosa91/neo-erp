@@ -81,7 +81,10 @@ Route::middleware('auth')->group(function () {
 
 // Rutas protegidas
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard - Solo para admins y super-admins
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('dashboard.access')
+        ->name('dashboard');
 
     // Perfil de Usuario
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -102,6 +105,7 @@ Route::middleware('auth')->group(function () {
 
     // Gestión POS del usuario
     Route::middleware('permission:users.edit')->group(function () {
+        Route::get('/users/{user}/pos-config', [UserController::class, 'getPosConfig'])->name('users.get-pos-config');
         Route::put('/users/{user}/pos-config', [UserController::class, 'updatePosConfig'])->name('users.update-pos-config');
         Route::post('/users/{user}/pos-pin', [UserController::class, 'setPosPin'])->name('users.set-pos-pin');
         Route::delete('/users/{user}/pos-pin', [UserController::class, 'removePosPin'])->name('users.remove-pos-pin');

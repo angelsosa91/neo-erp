@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('tenants')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('session_token', 64)->unique();
-            $table->enum('authentication_method', ['pin', 'rfid', 'pin+rfid']);
+            $table->enum('authentication_method', ['pin', 'rfid', 'pin+rfid', 'auto-login']);
             $table->string('rfid_code', 100)->nullable()->comment('Código RFID usado en esta sesión');
             $table->string('terminal_identifier', 100)->nullable()->comment('ID del dispositivo/navegador');
             $table->timestamp('opened_at');

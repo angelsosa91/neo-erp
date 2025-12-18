@@ -42,6 +42,7 @@ class UserController extends Controller
                 'email' => $user->email,
                 'tenant' => $user->tenant?->name ?? 'Sin empresa',
                 'roles' => $user->roles->pluck('name')->implode(', '),
+                'pos_enabled' => $user->pos_enabled,
                 'is_active' => $user->is_active,
                 'created_at' => $user->created_at->format('d/m/Y H:i'),
             ];
@@ -218,6 +219,21 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'PIN eliminado correctamente',
+        ]);
+    }
+
+    /**
+     * Obtener configuración POS del usuario
+     */
+    public function getPosConfig(User $user)
+    {
+        return response()->json([
+            'id' => $user->id,
+            'pos_enabled' => $user->pos_enabled,
+            'pos_require_rfid' => $user->pos_require_rfid,
+            'rfid_code' => $user->rfid_code,
+            'commission_percentage' => $user->commission_percentage,
+            'has_pin' => !empty($user->pos_pin),
         ]);
     }
 }
