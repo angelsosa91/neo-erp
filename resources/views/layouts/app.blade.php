@@ -483,13 +483,13 @@
                 </a>
             </li>
 
-            <li class="has-submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'open' : '' }}">
-                <a href="javascript:void(0)" class="{{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'active' : '' }}">
+            <li class="has-submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'open' : '' }}">
+                <a href="javascript:void(0)" class="{{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'active' : '' }}">
                     <i class="bi bi-bank"></i>
                     <span class="menu-text">Bancos</span>
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
-                <ul class="submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*') ? 'show' : '' }}">
+                <ul class="submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'show' : '' }}">
                     <li>
                         <a href="{{ route('banks.index') }}" class="{{ request()->routeIs('banks.*') ? 'active' : '' }}">
                             <i class="bi bi-bank"></i> Bancos
@@ -508,6 +508,11 @@
                     <li>
                         <a href="{{ route('checks.index') }}" class="{{ request()->routeIs('checks.*') ? 'active' : '' }}">
                             <i class="bi bi-receipt"></i> Cheques
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bank-reconciliations.index') }}" class="{{ request()->routeIs('bank-reconciliations.*') ? 'active' : '' }}">
+                            <i class="bi bi-check2-square"></i> Conciliación Bancaria
                         </a>
                     </li>
                 </ul>

@@ -19,6 +19,7 @@ use App\Http\Controllers\CashRegisterController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\BankController;
+use App\Http\Controllers\BankReconciliationController;
 use App\Http\Controllers\CheckController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\AccountChartController;
@@ -300,6 +301,20 @@ Route::middleware('auth')->group(function () {
     Route::post('/checks/{check}/cash', [CheckController::class, 'cashCheck'])->name('checks.cash');
     Route::post('/checks/{check}/bounce', [CheckController::class, 'bounceCheck'])->name('checks.bounce');
     Route::post('/checks/{check}/cancel', [CheckController::class, 'cancel'])->name('checks.cancel');
+
+    // Bancos - Conciliación Bancaria
+    Route::get('/bank-reconciliations', [BankReconciliationController::class, 'index'])->name('bank-reconciliations.index');
+    Route::get('/bank-reconciliations/data', [BankReconciliationController::class, 'data'])->name('bank-reconciliations.data');
+    Route::get('/bank-reconciliations/create', [BankReconciliationController::class, 'create'])->name('bank-reconciliations.create');
+    Route::post('/bank-reconciliations', [BankReconciliationController::class, 'store'])->name('bank-reconciliations.store');
+    Route::get('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'show'])->name('bank-reconciliations.show');
+    Route::get('/bank-reconciliations/{bankReconciliation}/edit', [BankReconciliationController::class, 'edit'])->name('bank-reconciliations.edit');
+    Route::put('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'update'])->name('bank-reconciliations.update');
+    Route::delete('/bank-reconciliations/{bankReconciliation}', [BankReconciliationController::class, 'destroy'])->name('bank-reconciliations.destroy');
+    Route::post('/bank-reconciliations/{bankReconciliation}/post', [BankReconciliationController::class, 'post'])->name('bank-reconciliations.post');
+    Route::post('/bank-reconciliations/{bankReconciliation}/cancel', [BankReconciliationController::class, 'cancel'])->name('bank-reconciliations.cancel');
+    Route::get('/bank-reconciliations/{bankReconciliation}/report', [BankReconciliationController::class, 'report'])->name('bank-reconciliations.report');
+    Route::get('/bank-reconciliations-unreconciled-transactions', [BankReconciliationController::class, 'getUnreconciledTransactions'])->name('bank-reconciliations.unreconciled-transactions');
 
     // Contabilidad - Plan de Cuentas
     Route::get('/account-chart', [AccountChartController::class, 'index'])->name('account-chart.index');

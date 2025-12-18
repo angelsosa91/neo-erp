@@ -49,6 +49,11 @@ class BankAccount extends Model
         return $this->hasMany(Check::class);
     }
 
+    public function reconciliations(): HasMany
+    {
+        return $this->hasMany(BankReconciliation::class);
+    }
+
     /**
      * Actualizar el saldo de la cuenta
      */
