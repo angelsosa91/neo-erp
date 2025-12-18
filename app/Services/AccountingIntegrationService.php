@@ -212,14 +212,14 @@ class AccountingIntegrationService
         }
 
         // Si es venta al contado, determinar según método de pago
-        if ($sale->payment_method === 'cash') {
-            return AccountingSetting::getValue($tenantId, 'cash');
-        } elseif (in_array($sale->payment_method, ['card', 'transfer'])) {
+        if ($sale->payment_method === 'Efectivo') {
+            return AccountingSetting::getValue($tenantId, 'Efectivo');
+        } elseif (in_array($sale->payment_method, ['Tarjeta', 'Transferencia'])) {
             return AccountingSetting::getValue($tenantId, 'bank_default');
         }
 
         // Por defecto, usar caja
-        return AccountingSetting::getValue($tenantId, 'cash');
+        return AccountingSetting::getValue($tenantId, 'Efectivo');
     }
 
     /**
