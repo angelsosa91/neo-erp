@@ -208,8 +208,8 @@
         </div>
 
         <div class="user-info">
-            <h5>{{ Auth::user()->name }}</h5>
-            <small>Ingrese su PIN</small>
+            <h5>Ingrese su PIN</h5>
+            <small>Cualquier vendedor habilitado puede acceder</small>
         </div>
 
         <div id="alert-container"></div>

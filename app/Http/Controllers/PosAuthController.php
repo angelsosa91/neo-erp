@@ -37,21 +37,28 @@ class PosAuthController extends Controller
             'pin' => 'required|string|min:4|max:6',
         ]);
 
-        $user = Auth::user();
+        $currentUser = Auth::user();
+        $tenantId = $currentUser->tenant_id;
 
-        // Verificar que el usuario puede usar el POS
-        if (!$user->canUsePOS()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tiene permisos para usar el POS o no tiene PIN configurado',
-            ], 403);
+        // Buscar usuario del mismo tenant que tenga ese PIN
+        $users = User::where('tenant_id', $tenantId)
+            ->where('pos_enabled', true)
+            ->where('is_active', true)
+            ->whereNotNull('pos_pin')
+            ->get();
+
+        $user = null;
+        foreach ($users as $potentialUser) {
+            if ($potentialUser->verifyPosPin($request->pin)) {
+                $user = $potentialUser;
+                break;
+            }
         }
 
-        // Verificar el PIN
-        if (!$user->verifyPosPin($request->pin)) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'PIN incorrecto',
+                'message' => 'PIN incorrecto o usuario no habilitado para POS',
             ], 401);
         }
 
@@ -85,6 +92,10 @@ class PosAuthController extends Controller
             null,
             $request->input('terminal_id')
         );
+
+        // IMPORTANTE: Hacer login del vendedor en Laravel
+        // Esto actualiza Auth::user() para que devuelva al vendedor correcto
+        Auth::login($user);
 
         // Guardar token en sesión
         session(['pos_session_token' => $posSession->session_token]);
@@ -146,6 +157,10 @@ class PosAuthController extends Controller
             $request->input('terminal_id')
         );
 
+        // IMPORTANTE: Hacer login del vendedor en Laravel
+        // Esto actualiza Auth::user() para que devuelva al vendedor correcto
+        Auth::login($user);
+
         // Guardar token en sesión
         session(['pos_session_token' => $posSession->session_token]);
 
@@ -173,10 +188,16 @@ class PosAuthController extends Controller
             session()->forget('pos_session_token');
         }
 
+        // IMPORTANTE: Cerrar también la sesión de Laravel
+        // Esto desloguea al vendedor del sistema completo
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return response()->json([
             'success' => true,
             'message' => 'Sesión cerrada correctamente',
-            'redirect' => route('pos.login'),
+            'redirect' => route('login'), // Redirige al login principal del sistema
         ]);
     }
 
