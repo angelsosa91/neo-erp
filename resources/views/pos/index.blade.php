@@ -79,6 +79,22 @@
             color: #667eea;
         }
 
+        .btn-change-vendor {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-change-vendor:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
         /* Main Layout */
         .pos-container {
             display: flex;
@@ -431,6 +447,9 @@
                 <small>Sesión: {{ $posSession->opened_at->format('H:i') }}</small>
                 <small>Duración: <span id="session-duration">{{ $posSession->formatted_duration }}</span></small>
             </div>
+            <button class="btn-change-vendor" onclick="changeVendor()">
+                <i class="bi bi-arrow-left-right"></i> Cambiar Vendedor
+            </button>
             <button class="btn-logout-pos" onclick="logoutPos()">
                 <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
             </button>
@@ -949,6 +968,31 @@
                     $('#btn-confirm-payment').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Confirmar Venta');
                 }
             });
+        }
+
+        // Cambiar de vendedor (logout rápido al POS login)
+        function changeVendor() {
+            if (cart.length > 0) {
+                if (!confirm('Hay items en el carrito que se perderán. ¿Desea continuar?')) {
+                    return;
+                }
+            }
+
+            if (confirm('¿Cambiar de vendedor?\n\nSe cerrará tu sesión y podrás ingresar con otro PIN.')) {
+                $.ajax({
+                    url: '{{ route('pos.logout') }}',
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            // Redirige al login POS (solo PIN)
+                            window.location.href = response.redirect;
+                        }
+                    },
+                    error: function() {
+                        alert('Error al cambiar de vendedor');
+                    }
+                });
+            }
         }
 
         // Cerrar sesión POS

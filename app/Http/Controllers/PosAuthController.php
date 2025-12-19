@@ -172,7 +172,7 @@ class PosAuthController extends Controller
     }
 
     /**
-     * Cerrar sesión POS
+     * Cerrar sesión POS (cambiar de vendedor)
      */
     public function logout(Request $request)
     {
@@ -188,16 +188,15 @@ class PosAuthController extends Controller
             session()->forget('pos_session_token');
         }
 
-        // IMPORTANTE: Cerrar también la sesión de Laravel
-        // Esto desloguea al vendedor del sistema completo
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // IMPORTANTE: NO hacemos logout de Laravel
+        // Esto permite cambio rápido de vendedor sin re-autenticación completa
+        // El siguiente vendedor hará Auth::login() con su PIN
+        // Laravel permanece autenticado con el último usuario (será reemplazado por el siguiente PIN)
 
         return response()->json([
             'success' => true,
-            'message' => 'Sesión cerrada correctamente',
-            'redirect' => route('login'), // Redirige al login principal del sistema
+            'message' => 'Listo para cambiar de vendedor',
+            'redirect' => route('pos.login'), // Redirige al login POS (solo PIN)
         ]);
     }
 

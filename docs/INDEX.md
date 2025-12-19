@@ -36,6 +36,7 @@ Este directorio contiene toda la documentación técnica del proyecto Neo ERP, o
 - **[POS_PRODUCTOS_IMPLEMENTADO.md](POS_PRODUCTOS_IMPLEMENTADO.md)** - Soporte para venta de productos (además de servicios)
 - **[POS_PREVENTA_IMPLEMENTADO.md](POS_PREVENTA_IMPLEMENTADO.md)** - Sistema de pre-ventas (borradores)
 - **[POS_MULTIVENDEDOR_IMPLEMENTADO.md](POS_MULTIVENDEDOR_IMPLEMENTADO.md)** - Acceso multi-vendedor con PIN
+- **[POS_CAMBIO_RAPIDO_VENDEDOR.md](POS_CAMBIO_RAPIDO_VENDEDOR.md)** - ⚡ Cambio rápido entre vendedores (sin logout completo)
 
 ### Flujos y Cambios
 

@@ -22,6 +22,7 @@ Sistema de Gestión Empresarial (ERP) moderno y completo desarrollado con Larave
 - [Desarrollo](#-desarrollo)
 - [Deployment](#-deployment)
 - [API](#-api)
+- [Documentación](#-documentación)
 - [Contribución](#-contribución)
 - [Licencia](#-licencia)
 
@@ -377,12 +378,19 @@ neo-erp/
 │   ├── mysql/                # Config MySQL
 │   ├── supervisor/           # Config Supervisor
 │   └── entrypoint.sh         # Script de inicio
+├── docs/                     # 📚 Documentación técnica
+│   ├── INDEX.md              # Índice de documentación
+│   ├── POS_*.md              # Documentación del POS
+│   ├── VENTAS_*.md           # Documentación de ventas
+│   ├── PERMISOS_*.md         # Documentación de seguridad
+│   └── DEPLOY_*.md           # Guías de despliegue
 ├── resources/
 │   └── views/                # Vistas Blade
 │       ├── layouts/          # Layouts principales
 │       ├── dashboard/        # Dashboard
 │       ├── sales/            # Ventas
 │       ├── purchases/        # Compras
+│       ├── pos/              # Punto de Venta
 │       ├── account-receivables/  # Cuentas por cobrar
 │       ├── account-payables/     # Cuentas por pagar
 │       ├── cash-registers/   # Caja
@@ -545,6 +553,34 @@ GET    /api/sales/{id}        # Ver venta
 
 # ... más endpoints según necesidad
 ```
+
+## 📚 Documentación
+
+La documentación técnica completa del proyecto se encuentra organizada en el directorio [`docs/`](docs/):
+
+### 📖 Índice de Documentación
+
+- **[Índice General](docs/INDEX.md)** - Punto de entrada a toda la documentación
+
+### 🔥 Documentación Destacada
+
+#### POS (Punto de Venta)
+- [Flujo POS Completo](docs/FLUJO_POS_FINAL.md) - Documentación detallada del POS
+- [Sistema Multi-Vendedor](docs/POS_MULTIVENDEDOR_IMPLEMENTADO.md) - Autenticación con PIN
+- [Sistema de Pre-Ventas](docs/POS_PREVENTA_IMPLEMENTADO.md) - Ventas en borrador
+
+#### Ventas
+- [Gestión de Ventas](docs/VENTAS_GESTION_COMPLETADA.md) - Confirmación y administración de ventas
+
+#### Seguridad
+- [Sistema de Permisos](docs/PERMISOS_IMPLEMENTACION.md) - Roles y permisos
+- [Flujo de Autenticación](docs/FLUJO_AUTENTICACION.md) - Seguridad y autenticación
+
+#### Despliegue
+- [Guía de Despliegue](docs/DEPLOY.md) - Cómo desplegar el sistema
+- [Checklist de Producción](docs/CHECKLIST_PRODUCCION.md) - Verificaciones antes de producción
+
+Ver el [Índice Completo](docs/INDEX.md) para acceder a toda la documentación disponible.
 
 ## 🤝 Contribución
 
