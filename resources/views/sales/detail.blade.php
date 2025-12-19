@@ -210,7 +210,7 @@
 
 <script>
 function confirmSale() {
-    $.messager.confirm('Confirmar', '¿Desea confirmar esta venta? Se descontará el stock.', function(r) {
+    $.messager.confirm('Confirmar', '¿Desea confirmar esta venta?', function(r) {
         if (r) {
             $.ajax({
                 url: '{{ route('sales.confirm', $sale) }}',
@@ -264,74 +264,80 @@ function cancelSale() {
 }
 
 function assignCustomer() {
-    $('#dlg-assign-customer').dialog('open');
+    // Limpiar selección previa
+    $('#customer-select').combobox('clear');
+    // Abrir modal
+    var assignCustomerModal = new bootstrap.Modal(document.getElementById('assignCustomerModal'));
+    assignCustomerModal.show();
 }
 
-$(function() {
-    $('#dlg-assign-customer').dialog({
-        title: 'Asignar Cliente',
-        width: 500,
-        height: 250,
-        closed: true,
-        modal: true,
-        buttons: [{
-            text: 'Asignar',
-            iconCls: 'icon-ok',
-            handler: function() {
-                var customerId = $('#customer-select').combobox('getValue');
-                if (!customerId) {
-                    $.messager.alert('Error', 'Debe seleccionar un cliente', 'error');
-                    return;
-                }
+function saveCustomerAssignment() {
+    var customerId = $('#customer-select').combobox('getValue');
 
-                $.ajax({
-                    url: '{{ route('sales.update-customer', $sale) }}',
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    data: {
-                        customer_id: customerId
-                    },
-                    success: function(response) {
-                        $.messager.alert('Éxito', response.message, 'info', function() {
-                            location.reload();
-                        });
-                    },
-                    error: function(xhr) {
-                        var errors = xhr.responseJSON.errors;
-                        var message = '';
-                        for (var key in errors) {
-                            message += errors[key].join('<br>') + '<br>';
-                        }
-                        $.messager.alert('Error', message, 'error');
-                    }
-                });
+    if (!customerId) {
+        $.messager.alert('Error', 'Debe seleccionar un cliente', 'error');
+        return;
+    }
+
+    $.ajax({
+        url: '{{ route('sales.update-customer', $sale) }}',
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        data: {
+            customer_id: customerId
+        },
+        success: function(response) {
+            $.messager.alert('Éxito', response.message, 'info', function() {
+                location.reload();
+            });
+        },
+        error: function(xhr) {
+            var errors = xhr.responseJSON?.errors || {};
+            var message = '';
+            for (var key in errors) {
+                message += errors[key].join('<br>') + '<br>';
             }
-        }, {
-            text: 'Cancelar',
-            handler: function() {
-                $('#dlg-assign-customer').dialog('close');
+            if (!message) {
+                message = xhr.responseJSON?.message || 'Error desconocido';
             }
-        }]
+            $.messager.alert('Error', message, 'error');
+        }
     });
-});
+}
 </script>
 
-<!-- Modal para asignar cliente -->
-<div id="dlg-assign-customer" style="padding: 20px;">
-    <div class="form-group">
-        <label for="customer-select">Cliente:</label>
-        <input id="customer-select" class="easyui-combobox" style="width:100%"
-               data-options="
-                   url: '{{ route('customers.list') }}',
-                   method: 'get',
-                   valueField: 'id',
-                   textField: 'name',
-                   panelHeight: 'auto',
-                   editable: true,
-                   required: true
-               ">
+<!-- Modal Bootstrap para asignar cliente -->
+<div class="modal fade" id="assignCustomerModal" tabindex="-1" aria-labelledby="assignCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignCustomerModalLabel">Asignar Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="customer-select" class="form-label">Cliente:</label>
+                    <input id="customer-select" class="easyui-combobox" style="width:300px;height:34px;"
+                           data-options="
+                               url: '{{ route('customers.list') }}',
+                               method: 'get',
+                               valueField: 'id',
+                               textField: 'name',
+                               panelHeight: 'auto',
+                               editable: true,
+                               required: true
+                           ">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveCustomerAssignment()">
+                    <i class="bi bi-check-lg"></i> Asignar
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 @endsection

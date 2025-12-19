@@ -348,8 +348,21 @@ class SaleController extends Controller
             }
 
             // Crear asiento contable automático
-            $accountingService = new AccountingIntegrationService();
-            $accountingService->createSaleJournalEntry($sale);
+            try {
+                $accountingService = new AccountingIntegrationService();
+                $accountingService->createSaleJournalEntry($sale);
+            } catch (\Exception $accountingError) {
+                // Si falla la integración contable, advertir pero no cancelar la venta
+                \Log::warning('Error al crear asiento contable para venta ' . $sale->sale_number . ': ' . $accountingError->getMessage());
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Venta confirmada correctamente. ADVERTENCIA: No se pudo crear el asiento contable automático. Por favor, configure las cuentas contables en la configuración del sistema.',
+                    'warning' => 'Cuentas contables no configuradas. Vaya a Configuración > Cuentas Contables para configurarlas.'
+                ]);
+            }
 
             DB::commit();
 
