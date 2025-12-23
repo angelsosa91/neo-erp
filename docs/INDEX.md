@@ -15,8 +15,9 @@ Este directorio contiene toda la documentación técnica del proyecto Neo ERP, o
 
 ---
 
-## 🔐 Autenticación y Permisos
+## 🔐 Seguridad y Permisos
 
+- **[SEGURIDAD_REDIS.md](SEGURIDAD_REDIS.md)** - 🚨 **CRÍTICO**: Configuración segura de Redis
 - **[FLUJO_AUTENTICACION.md](FLUJO_AUTENTICACION.md)** - Documentación del flujo de autenticación del sistema
 - **[PERMISOS_IMPLEMENTACION.md](PERMISOS_IMPLEMENTACION.md)** - Implementación técnica del sistema de permisos y roles
 
