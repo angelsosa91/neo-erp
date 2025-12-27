@@ -315,12 +315,14 @@
         </div>
         <ul class="nav-menu">
             <!-- PRINCIPAL -->
+            @canany(['dashboard.view'])
             <li>
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="bi bi-speedometer2"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>
             </li>
+            @endcanany
 
             <!-- OPERACIONES -->
             <div class="menu-section-title">Operaciones</div>

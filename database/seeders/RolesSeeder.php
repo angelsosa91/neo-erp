@@ -49,6 +49,8 @@ class RolesSeeder extends Seeder
             'gastos',
             'reportes',
         ])->orWhereIn('slug', [
+            // Dashboard - acceso completo
+            'dashboard.view',
             // Necesita ver clientes y proveedores
             'customers.view',
             'suppliers.view',
@@ -180,9 +182,11 @@ class RolesSeeder extends Seeder
             'clientes',
             'cuentas_cobrar',
         ])->orWhereIn('slug', [
+            // Dashboard - acceso completo
+            'dashboard.view',
             'products.view',
             'cash-register.view',
-            'reportes.view',
+            'reports.view',
         ])->pluck('id');
 
         $supervisorVentas->permissions()->sync($supervisorVentasPermisos);
