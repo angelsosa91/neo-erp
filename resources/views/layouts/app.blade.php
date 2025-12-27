@@ -336,6 +336,7 @@
             @endcanany
 
             <!-- Ventas -->
+            @canany(['sales.view', 'sales.create', 'credit-notes.view', 'remissions.view'])
             <li class="has-submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'active' : '' }}">
                     <i class="bi bi-cart-check"></i>
@@ -343,34 +344,44 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('sales.*') || request()->routeIs('credit-notes.*') || request()->routeIs('remissions.*') ? 'show' : '' }}">
+                    @canany(['sales.create'])
                     <li>
                         <a href="{{ route('sales.create') }}" class="{{ request()->routeIs('sales.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle"></i>
                             <span class="menu-text">Nueva Venta</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['sales.view'])
                     <li>
                         <a href="{{ route('sales.index') }}" class="{{ request()->routeIs('sales.index') ? 'active' : '' }}">
                             <i class="bi bi-list-ul"></i>
                             <span class="menu-text">Listado</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['credit-notes.view'])
                     <li>
                         <a href="{{ route('credit-notes.index') }}" class="{{ request()->routeIs('credit-notes.*') ? 'active' : '' }}">
                             <i class="bi bi-file-earmark-minus"></i>
                             <span class="menu-text">Notas de Crédito</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['remissions.view'])
                     <li>
                         <a href="{{ route('remissions.index') }}" class="{{ request()->routeIs('remissions.*') ? 'active' : '' }}">
                             <i class="bi bi-truck"></i>
                             <span class="menu-text">Remisiones</span>
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- Compras -->
+            @canany(['purchases.view', 'purchases.create'])
             <li class="has-submenu {{ request()->routeIs('purchases.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('purchases.*') ? 'active' : '' }}">
                     <i class="bi bi-bag"></i>
@@ -378,22 +389,28 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('purchases.*') ? 'show' : '' }}">
+                    @canany(['purchases.create'])
                     <li>
                         <a href="{{ route('purchases.create') }}" class="{{ request()->routeIs('purchases.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle"></i>
                             <span class="menu-text">Nueva Compra</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['purchases.view'])
                     <li>
                         <a href="{{ route('purchases.index') }}" class="{{ request()->routeIs('purchases.index') ? 'active' : '' }}">
                             <i class="bi bi-list-ul"></i>
                             <span class="menu-text">Listado</span>
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- Gastos -->
+            @canany(['expenses.view', 'expenses.create'])
             <li class="has-submenu {{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'active' : '' }}">
                     <i class="bi bi-cash-stack"></i>
@@ -401,30 +418,38 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('expenses.*', 'expense-categories.*') ? 'show' : '' }}">
+                    @canany(['expenses.create'])
                     <li>
                         <a href="{{ route('expenses.create') }}" class="{{ request()->routeIs('expenses.create') ? 'active' : '' }}">
                             <i class="bi bi-plus-circle"></i>
                             <span class="menu-text">Nuevo Gasto</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['expenses.view'])
                     <li>
                         <a href="{{ route('expenses.index') }}" class="{{ request()->routeIs('expenses.index') ? 'active' : '' }}">
                             <i class="bi bi-list-ul"></i>
                             <span class="menu-text">Listado</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['expenses.view'])
                     <li>
                         <a href="{{ route('expense-categories.index') }}" class="{{ request()->routeIs('expense-categories.*') ? 'active' : '' }}">
                             <i class="bi bi-tags"></i>
                             <span class="menu-text">Categorías</span>
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- INVENTARIO & PRODUCTOS -->
             <div class="menu-section-title">Inventario</div>
 
+            @canany(['products.view', 'services.view', 'categories.view', 'inventory-adjustments.view'])
             <li class="has-submenu {{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'active' : '' }}">
                     <i class="bi bi-box"></i>
@@ -432,12 +457,14 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('products.*', 'services.*', 'categories.*', 'inventory-adjustments.*') ? 'show' : '' }}">
+                    @canany(['products.view'])
                     <li>
                         <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'active' : '' }}">
                             <i class="bi bi-box-seam"></i>
                             <span class="menu-text">Productos</span>
                         </a>
                     </li>
+                    @endcanany
                     @canany(['services.view'])
                     <li>
                         <a href="{{ route('services.index') }}" class="{{ request()->routeIs('services.*') ? 'active' : '' }}">
@@ -446,61 +473,77 @@
                         </a>
                     </li>
                     @endcanany
+                    @canany(['categories.view'])
                     <li>
                         <a href="{{ route('categories.index') }}" class="{{ request()->routeIs('categories.*') ? 'active' : '' }}">
                             <i class="bi bi-tags"></i>
                             <span class="menu-text">Categorías</span>
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['inventory-adjustments.view'])
                     <li>
                         <a href="{{ route('inventory-adjustments.index') }}" class="{{ request()->routeIs('inventory-adjustments.*') ? 'active' : '' }}">
                             <i class="bi bi-sliders"></i>
                             <span class="menu-text">Ajustes</span>
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- CONTACTOS -->
             <div class="menu-section-title">Contactos</div>
 
+            @canany(['customers.view'])
             <li>
                 <a href="{{ route('customers.index') }}" class="{{ request()->routeIs('customers.*') ? 'active' : '' }}">
                     <i class="bi bi-people"></i>
                     <span class="menu-text">Clientes</span>
                 </a>
             </li>
+            @endcanany
+            @canany(['suppliers.view'])
             <li>
                 <a href="{{ route('suppliers.index') }}" class="{{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
                     <i class="bi bi-truck"></i>
                     <span class="menu-text">Proveedores</span>
                 </a>
             </li>
+            @endcanany
 
             <!-- FINANZAS Section -->
             <div class="menu-section-title">Finanzas</div>
 
+            @canany(['accounts-receivable.view'])
             <li>
                 <a href="{{ route('account-receivables.index') }}" class="{{ request()->routeIs('account-receivables.*') ? 'active' : '' }}">
                     <i class="bi bi-wallet2"></i>
                     <span class="menu-text">Cuentas por Cobrar</span>
                 </a>
             </li>
+            @endcanany
 
+            @canany(['accounts-payable.view'])
             <li>
                 <a href="{{ route('account-payables.index') }}" class="{{ request()->routeIs('account-payables.*') ? 'active' : '' }}">
                     <i class="bi bi-credit-card"></i>
                     <span class="menu-text">Cuentas por Pagar</span>
                 </a>
             </li>
+            @endcanany
 
+            @canany(['cash-register.view'])
             <li>
                 <a href="{{ route('cash-registers.current') }}" class="{{ request()->routeIs('cash-registers.*') ? 'active' : '' }}">
                     <i class="bi bi-cash-coin"></i>
                     <span class="menu-text">Caja</span>
                 </a>
             </li>
+            @endcanany
 
+            @canany(['banks.view', 'bank-accounts.view', 'bank-transactions.view', 'checks.view', 'bank-reconciliations.view'])
             <li class="has-submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'active' : '' }}">
                     <i class="bi bi-bank"></i>
@@ -508,37 +551,49 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('banks.*', 'bank-accounts.*', 'bank-transactions.*', 'checks.*', 'bank-reconciliations.*') ? 'show' : '' }}">
+                    @canany(['banks.view'])
                     <li>
                         <a href="{{ route('banks.index') }}" class="{{ request()->routeIs('banks.*') ? 'active' : '' }}">
                             <i class="bi bi-bank"></i> Bancos
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['bank-accounts.view'])
                     <li>
                         <a href="{{ route('bank-accounts.index') }}" class="{{ request()->routeIs('bank-accounts.*') ? 'active' : '' }}">
                             <i class="bi bi-credit-card-2-front"></i> Cuentas Bancarias
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['bank-transactions.view'])
                     <li>
                         <a href="{{ route('bank-transactions.index') }}" class="{{ request()->routeIs('bank-transactions.*') ? 'active' : '' }}">
                             <i class="bi bi-arrow-left-right"></i> Movimientos
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['checks.view'])
                     <li>
                         <a href="{{ route('checks.index') }}" class="{{ request()->routeIs('checks.*') ? 'active' : '' }}">
                             <i class="bi bi-receipt"></i> Cheques
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['bank-reconciliations.view'])
                     <li>
                         <a href="{{ route('bank-reconciliations.index') }}" class="{{ request()->routeIs('bank-reconciliations.*') ? 'active' : '' }}">
                             <i class="bi bi-check2-square"></i> Conciliación Bancaria
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- CONTABILIDAD Section -->
             <div class="menu-section-title">Contabilidad</div>
 
+            @canany(['account-chart.view', 'journal-entries.view', 'general-ledger.view', 'financial-statements.trial-balance', 'financial-statements.balance-sheet', 'financial-statements.income-statement'])
             <li class="has-submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*', 'accounting.*', 'accounting-settings.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*', 'accounting.*', 'accounting-settings.*') ? 'active' : '' }}">
                     <i class="bi bi-journal-text"></i>
@@ -546,47 +601,63 @@
                     <i class="bi bi-chevron-right chevron"></i>
                 </a>
                 <ul class="submenu {{ request()->routeIs('account-chart.*', 'journal-entries.*', 'general-ledger.*', 'trial-balance.*', 'accounting.*', 'accounting-settings.*') ? 'show' : '' }}">
+                    @canany(['account-chart.view'])
                     <li>
                         <a href="{{ route('account-chart.index') }}" class="{{ request()->routeIs('account-chart.*') ? 'active' : '' }}">
                             <i class="bi bi-diagram-3"></i> Plan de Cuentas
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['journal-entries.view'])
                     <li>
                         <a href="{{ route('journal-entries.index') }}" class="{{ request()->routeIs('journal-entries.*') ? 'active' : '' }}">
                             <i class="bi bi-journal-bookmark"></i> Asientos Contables
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['general-ledger.view'])
                     <li>
                         <a href="{{ route('general-ledger.index') }}" class="{{ request()->routeIs('general-ledger.*') ? 'active' : '' }}">
                             <i class="bi bi-book"></i> Libro Mayor
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['financial-statements.trial-balance'])
                     <li>
                         <a href="{{ route('trial-balance.index') }}" class="{{ request()->routeIs('trial-balance.*') ? 'active' : '' }}">
                             <i class="bi bi-calculator"></i> Balance de Comprobación
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['financial-statements.balance-sheet'])
                     <li>
                         <a href="{{ route('accounting.balance-sheet') }}" class="{{ request()->routeIs('accounting.balance-sheet') ? 'active' : '' }}">
                             <i class="bi bi-file-earmark-bar-graph"></i> Balance General
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['financial-statements.income-statement'])
                     <li>
                         <a href="{{ route('accounting.income-statement') }}" class="{{ request()->routeIs('accounting.income-statement') ? 'active' : '' }}">
                             <i class="bi bi-graph-up"></i> Estado de Resultados
                         </a>
                     </li>
+                    @endcanany
+                    @canany(['settings.general'])
                     <li>
                         <a href="{{ route('accounting-settings.index') }}" class="{{ request()->routeIs('accounting-settings.*') ? 'active' : '' }}">
                             <i class="bi bi-gear"></i> Configuración Contable
                         </a>
                     </li>
+                    @endcanany
                 </ul>
             </li>
+            @endcanany
 
             <!-- REPORTES Section -->
             <div class="menu-section-title">Reportes</div>
 
+            @canany(['reports.view'])
             <li class="has-submenu {{ request()->routeIs('reports.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="bi bi-file-bar-graph"></i>
@@ -646,27 +717,33 @@
                     </li>
                 </ul>
             </li>
+            @endcanany
 
             <!-- ADMINISTRACIÓN Section -->
             <div class="menu-section-title">Administración</div>
 
+            @canany(['users.view'])
             <li>
                 <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="bi bi-person-badge"></i>
                     <span class="menu-text">Usuarios</span>
                 </a>
             </li>
+            @endcanany
 
+            @canany(['roles.view'])
             <li>
                 <a href="{{ route('roles.index') }}" class="{{ request()->routeIs('roles.*') ? 'active' : '' }}">
                     <i class="bi bi-shield-lock"></i>
                     <span class="menu-text">Roles</span>
                 </a>
             </li>
+            @endcanany
 
             <!-- CONFIGURACIÓN Section -->
             <div class="menu-section-title">Configuración</div>
 
+            @canany(['settings.general'])
             <li class="has-submenu {{ request()->routeIs('settings.*') ? 'open' : '' }}">
                 <a href="javascript:void(0)" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
                     <i class="bi bi-gear"></i>
@@ -691,6 +768,7 @@
                     </li>
                 </ul>
             </li>
+            @endcanany
         </ul>
     </div>
     
