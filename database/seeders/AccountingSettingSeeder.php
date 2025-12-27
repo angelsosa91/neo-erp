@@ -30,7 +30,7 @@ class AccountingSettingSeeder extends Seeder
             'bank_withdrawals_default' => '1.1.01', // Retiros a Caja
             'inventory' => '1.1.04',          // Inventario
             'expenses_default' => '5.2',      // Gastos de Administración
-            'financial_income' => '4.2',   // Ingresos Financieros
+            'financial_income' => '4.2.01',   // Ingresos Financieros
             'financial_expenses' => '5.3',    // Gastos Financieros
         ];
 
