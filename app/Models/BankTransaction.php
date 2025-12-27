@@ -29,6 +29,7 @@ class BankTransaction extends Model
         'balance_after',
         'user_id',
         'status',
+        'journal_entry_id',
         'reconciled',
         'reconciled_date',
     ];
@@ -74,6 +75,11 @@ class BankTransaction extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 
     /**

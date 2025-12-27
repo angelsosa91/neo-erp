@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->foreignId('pos_session_id')->nullable()->after('user_id')->constrained('pos_sessions')->onDelete('set null');
-            $table->index('pos_session_id');
+            if (!Schema::hasColumn('sales', 'pos_session_id')) {
+                $table->foreignId('pos_session_id')->nullable()->after('user_id')->constrained('pos_sessions')->onDelete('set null');
+                $table->index('pos_session_id');
+            }
         });
     }
 

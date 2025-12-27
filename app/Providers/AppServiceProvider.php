@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\BankTransaction;
+use App\Observers\BankTransactionObserver;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +32,9 @@ class AppServiceProvider extends ServiceProvider
         //if ($this->app->environment('production')) {
         $this->app['request']->server->set('HTTPS', 'on');
         //}
+
+        // Registrar observers
+        BankTransaction::observe(BankTransactionObserver::class);
 
         // Directivas Blade para permisos
         $this->registerBladeDirectives();

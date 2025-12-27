@@ -75,12 +75,18 @@ class AccountingSetting extends Model
             // Caja y Bancos
             'cash' => 'Cuenta de Caja',
             'bank_default' => 'Cuenta de Banco por Defecto',
+            'bank_deposits_default' => 'Cuenta de Depósitos Bancarios',
+            'bank_withdrawals_default' => 'Cuenta de Retiros Bancarios',
 
             // Inventario
             'inventory' => 'Cuenta de Inventario',
 
             // Gastos
             'expenses_default' => 'Cuenta de Gastos por Defecto',
+
+            // Ingresos y Gastos Financieros
+            'financial_income' => 'Cuenta de Ingresos Financieros (Intereses)',
+            'financial_expenses' => 'Cuenta de Gastos Financieros (Cargos)',
         ];
     }
 }

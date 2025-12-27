@@ -26,8 +26,12 @@ class AccountingSettingSeeder extends Seeder
             'accounts_payable' => '2.1.01',   // Cuentas por Pagar
             'cash' => '1.1.01',               // Caja
             'bank_default' => '1.1.02',       // Bancos
+            'bank_deposits_default' => '1.1.01',  // Depósitos desde Caja
+            'bank_withdrawals_default' => '1.1.01', // Retiros a Caja
             'inventory' => '1.1.04',          // Inventario
             'expenses_default' => '5.2',      // Gastos de Administración
+            'financial_income' => '4.2',   // Ingresos Financieros
+            'financial_expenses' => '5.3',    // Gastos Financieros
         ];
 
         foreach ($accounts as $key => $code) {

@@ -10,6 +10,7 @@ use App\Models\Purchase;
 use App\Models\AccountReceivablePayment;
 use App\Models\AccountPayablePayment;
 use App\Models\CreditNote;
+use App\Models\BankTransaction;
 use Illuminate\Support\Facades\DB;
 
 class AccountingIntegrationService
@@ -1052,6 +1053,288 @@ class AccountingIntegrationService
 
         if ($creditNote->customer) {
             $description .= ' - ' . $creditNote->customer->name;
+        }
+
+        return $description;
+    }
+
+    /**
+     * Crear asiento contable para una transacción bancaria
+     */
+    public function createBankTransactionJournalEntry(BankTransaction $transaction): JournalEntry
+    {
+        $tenantId = $transaction->tenant_id;
+
+        // Validar que las cuentas necesarias estén configuradas
+        $this->validateBankTransactionAccounts($tenantId, $transaction);
+
+        // Obtener cuenta bancaria
+        $bankAccountId = $transaction->bankAccount->account_id;
+
+        if (!$bankAccountId) {
+            throw new \Exception(
+                'La cuenta bancaria "' . $transaction->bankAccount->account_number .
+                '" no tiene una cuenta contable asociada. Configure la cuenta contable en el módulo de Bancos.'
+            );
+        }
+
+        // Determinar cuentas según el tipo de transacción
+        $accounts = $this->getAccountsForBankTransaction($tenantId, $transaction);
+
+        // Crear el asiento contable
+        DB::beginTransaction();
+        try {
+            $period = date('Y-m', strtotime($transaction->transaction_date));
+
+            $journalEntry = JournalEntry::create([
+                'tenant_id' => $tenantId,
+                'entry_number' => JournalEntry::generateEntryNumber($tenantId, $period),
+                'entry_date' => $transaction->transaction_date,
+                'period' => $period,
+                'reference' => $transaction->transaction_number,
+                'description' => $this->getBankTransactionDescription($transaction),
+                'status' => 'posted',
+                'user_id' => $transaction->user_id ?? auth()->id(),
+            ]);
+
+            // Crear líneas del asiento según el tipo de transacción
+            foreach ($accounts['lines'] as $line) {
+                JournalEntryLine::create([
+                    'journal_entry_id' => $journalEntry->id,
+                    'account_id' => $line['account_id'],
+                    'description' => $line['description'],
+                    'debit' => $line['debit'],
+                    'credit' => $line['credit'],
+                ]);
+            }
+
+            // Actualizar saldos de cuentas
+            $journalEntry->updateAccountBalances();
+
+            // Vincular el asiento a la transacción
+            $transaction->journal_entry_id = $journalEntry->id;
+            $transaction->save();
+
+            DB::commit();
+
+            return $journalEntry;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Determinar cuentas contables según el tipo de transacción bancaria
+     */
+    private function getAccountsForBankTransaction(int $tenantId, BankTransaction $transaction): array
+    {
+        $bankAccountId = $transaction->bankAccount->account_id;
+        $amount = $transaction->amount;
+        $type = $transaction->type;
+
+        $lines = [];
+
+        switch ($type) {
+            case 'deposit':
+                // Depósito manual: DÉBITO Banco, CRÉDITO cuenta configurable
+                $creditAccountId = AccountingSetting::getValue($tenantId, 'bank_deposits_default');
+
+                $lines[] = [
+                    'account_id' => $bankAccountId,
+                    'description' => $transaction->description ?? 'Depósito bancario',
+                    'debit' => $amount,
+                    'credit' => 0,
+                ];
+
+                $lines[] = [
+                    'account_id' => $creditAccountId,
+                    'description' => $transaction->description ?? 'Depósito bancario',
+                    'debit' => 0,
+                    'credit' => $amount,
+                ];
+                break;
+
+            case 'withdrawal':
+                // Retiro manual: DÉBITO cuenta configurable, CRÉDITO Banco
+                $debitAccountId = AccountingSetting::getValue($tenantId, 'bank_withdrawals_default');
+
+                $lines[] = [
+                    'account_id' => $debitAccountId,
+                    'description' => $transaction->description ?? 'Retiro bancario',
+                    'debit' => $amount,
+                    'credit' => 0,
+                ];
+
+                $lines[] = [
+                    'account_id' => $bankAccountId,
+                    'description' => $transaction->description ?? 'Retiro bancario',
+                    'debit' => 0,
+                    'credit' => $amount,
+                ];
+                break;
+
+            case 'interest':
+                // Interés bancario: DÉBITO Banco, CRÉDITO Ingresos Financieros
+                $creditAccountId = AccountingSetting::getValue($tenantId, 'financial_income');
+
+                $lines[] = [
+                    'account_id' => $bankAccountId,
+                    'description' => 'Interés bancario',
+                    'debit' => $amount,
+                    'credit' => 0,
+                ];
+
+                $lines[] = [
+                    'account_id' => $creditAccountId,
+                    'description' => 'Interés bancario',
+                    'debit' => 0,
+                    'credit' => $amount,
+                ];
+                break;
+
+            case 'charge':
+                // Cargo bancario: DÉBITO Gastos Financieros, CRÉDITO Banco
+                $debitAccountId = AccountingSetting::getValue($tenantId, 'financial_expenses');
+
+                $lines[] = [
+                    'account_id' => $debitAccountId,
+                    'description' => 'Cargo bancario: ' . ($transaction->description ?? 'Comisión bancaria'),
+                    'debit' => $amount,
+                    'credit' => 0,
+                ];
+
+                $lines[] = [
+                    'account_id' => $bankAccountId,
+                    'description' => 'Cargo bancario',
+                    'debit' => 0,
+                    'credit' => $amount,
+                ];
+                break;
+
+            case 'transfer_out':
+                // Transferencia saliente: ya manejada por el destino
+                // Este asiento se crea desde transfer_in
+                if ($transaction->related_transaction_id) {
+                    // Es parte de una transferencia, manejar ambas cuentas
+                    $destinationTransaction = BankTransaction::find($transaction->related_transaction_id);
+                    if ($destinationTransaction && $destinationTransaction->bankAccount->account_id) {
+                        $destinationAccountId = $destinationTransaction->bankAccount->account_id;
+
+                        $lines[] = [
+                            'account_id' => $destinationAccountId,
+                            'description' => 'Transferencia recibida: ' . ($transaction->description ?? ''),
+                            'debit' => $amount,
+                            'credit' => 0,
+                        ];
+
+                        $lines[] = [
+                            'account_id' => $bankAccountId,
+                            'description' => 'Transferencia enviada: ' . ($transaction->description ?? ''),
+                            'debit' => 0,
+                            'credit' => $amount,
+                        ];
+                    }
+                }
+                break;
+
+            case 'transfer_in':
+                // Transferencia entrante: no crear asiento duplicado
+                // El asiento se crea desde transfer_out
+                break;
+
+            default:
+                throw new \Exception('Tipo de transacción bancaria no soportado: ' . $type);
+        }
+
+        return ['lines' => $lines];
+    }
+
+    /**
+     * Validar que las cuentas necesarias para transacciones bancarias estén configuradas
+     */
+    private function validateBankTransactionAccounts(int $tenantId, BankTransaction $transaction): void
+    {
+        $errors = [];
+
+        // Validar que la cuenta bancaria tenga cuenta contable asociada
+        if (!$transaction->bankAccount->account_id) {
+            throw new \Exception(
+                'La cuenta bancaria "' . $transaction->bankAccount->account_number .
+                '" no tiene una cuenta contable asociada. Configure la cuenta contable en el módulo de Bancos.'
+            );
+        }
+
+        // Validar cuentas según el tipo de transacción
+        switch ($transaction->type) {
+            case 'deposit':
+                if (!AccountingSetting::getValue($tenantId, 'bank_deposits_default')) {
+                    $errors[] = 'Cuenta de Depósitos Bancarios (Contrapartida)';
+                }
+                break;
+
+            case 'withdrawal':
+                if (!AccountingSetting::getValue($tenantId, 'bank_withdrawals_default')) {
+                    $errors[] = 'Cuenta de Retiros Bancarios (Contrapartida)';
+                }
+                break;
+
+            case 'interest':
+                if (!AccountingSetting::getValue($tenantId, 'financial_income')) {
+                    $errors[] = 'Cuenta de Ingresos Financieros';
+                }
+                break;
+
+            case 'charge':
+                if (!AccountingSetting::getValue($tenantId, 'financial_expenses')) {
+                    $errors[] = 'Cuenta de Gastos Financieros';
+                }
+                break;
+
+            case 'transfer_out':
+                if ($transaction->related_transaction_id) {
+                    $destinationTransaction = BankTransaction::find($transaction->related_transaction_id);
+                    if ($destinationTransaction && !$destinationTransaction->bankAccount->account_id) {
+                        throw new \Exception(
+                            'La cuenta bancaria destino "' . $destinationTransaction->bankAccount->account_number .
+                            '" no tiene una cuenta contable asociada.'
+                        );
+                    }
+                }
+                break;
+        }
+
+        if (!empty($errors)) {
+            throw new \Exception(
+                'Debe configurar las siguientes cuentas contables antes de registrar la transacción bancaria: ' .
+                implode(', ', $errors) . '. ' .
+                'Vaya a Contabilidad > Configuración Contable para configurarlas.'
+            );
+        }
+    }
+
+    /**
+     * Obtener descripción del asiento de transacción bancaria
+     */
+    private function getBankTransactionDescription(BankTransaction $transaction): string
+    {
+        $typeLabels = [
+            'deposit' => 'Depósito bancario',
+            'withdrawal' => 'Retiro bancario',
+            'interest' => 'Interés bancario',
+            'charge' => 'Cargo bancario',
+            'transfer_out' => 'Transferencia bancaria saliente',
+            'transfer_in' => 'Transferencia bancaria entrante',
+            'check' => 'Cheque',
+        ];
+
+        $description = $typeLabels[$transaction->type] ?? 'Transacción bancaria';
+        $description .= ' ' . $transaction->transaction_number;
+        $description .= ' - ' . $transaction->bankAccount->bank_name;
+
+        if ($transaction->description) {
+            $description .= ' - ' . $transaction->description;
         }
 
         return $description;
