@@ -31,6 +31,32 @@ class AccountingSettingController extends Controller
         $tenantId = Auth::user()->tenant_id;
         $availableKeys = AccountingSetting::getAvailableKeys();
 
+        // Validar tipos de cuenta antes de guardar
+        foreach ($request->settings as $key => $accountId) {
+            if ($accountId && array_key_exists($key, $availableKeys)) {
+                $account = AccountChart::where('id', $accountId)
+                    ->where('tenant_id', $tenantId)
+                    ->first();
+
+                if (!$account) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "La cuenta seleccionada para {$availableKeys[$key]} no es válida.",
+                    ], 422);
+                }
+
+                // Validar tipo de cuenta según la configuración
+                $validationError = $this->validateAccountType($key, $account, $availableKeys[$key]);
+                if ($validationError) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $validationError,
+                    ], 422);
+                }
+            }
+        }
+
+        // Si todas las validaciones pasan, guardar la configuración
         foreach ($request->settings as $key => $accountId) {
             if (array_key_exists($key, $availableKeys)) {
                 if ($accountId) {
@@ -53,5 +79,65 @@ class AccountingSettingController extends Controller
             'success' => true,
             'message' => 'Configuración contable guardada exitosamente',
         ]);
+    }
+
+    /**
+     * Validar que el tipo de cuenta sea apropiado para la configuración
+     */
+    private function validateAccountType($key, $account, $description)
+    {
+        $accountTypeRules = [
+            // Ingresos
+            'sales_income' => ['income'],
+            'sales_discount' => ['expense', 'income'], // Puede ser contra-ingreso
+            'financial_income' => ['income'],
+
+            // Gastos
+            'purchases_expense' => ['expense'],
+            'purchases_discount' => ['income', 'expense'], // Puede ser contra-gasto
+            'expenses_default' => ['expense'],
+            'financial_expenses' => ['expense'],
+
+            // Activos (Caja, Bancos, Cuentas por Cobrar, Inventario)
+            'cash' => ['asset'],
+            'bank_default' => ['asset'],
+            'bank_deposits_default' => ['asset'],
+            'bank_withdrawals_default' => ['asset'],
+            'accounts_receivable' => ['asset'],
+            'inventory' => ['asset'],
+
+            // Pasivos
+            'accounts_payable' => ['liability'],
+
+            // Impuestos (pueden ser activos o pasivos)
+            'sales_tax' => ['liability', 'asset'],
+            'purchases_tax' => ['asset', 'liability'],
+        ];
+
+        if (!isset($accountTypeRules[$key])) {
+            return null; // No hay regla de validación para esta clave
+        }
+
+        $allowedTypes = $accountTypeRules[$key];
+
+        if (!in_array($account->account_type, $allowedTypes)) {
+            $typesSpanish = [
+                'asset' => 'Activo',
+                'liability' => 'Pasivo',
+                'equity' => 'Patrimonio',
+                'income' => 'Ingreso',
+                'expense' => 'Gasto',
+            ];
+
+            $allowedTypesText = implode(' o ', array_map(function($type) use ($typesSpanish) {
+                return $typesSpanish[$type] ?? $type;
+            }, $allowedTypes));
+
+            $currentType = $typesSpanish[$account->account_type] ?? $account->account_type;
+
+            return "La cuenta '{$account->name}' es de tipo {$currentType}, pero para '{$description}' debe ser de tipo {$allowedTypesText}.";
+        }
+
+        return null; // Validación exitosa
     }
 }

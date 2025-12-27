@@ -108,6 +108,43 @@
                 </div>
             </div>
 
+            <!-- Movimientos Bancarios -->
+            <h5 class="mt-4 mb-3"><i class="bi bi-bank"></i> Movimientos Bancarios</h5>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Transacciones Bancarias:</strong> Estas cuentas se utilizan para registrar depósitos, retiros, intereses y cargos bancarios.
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Cuenta de Depósitos Bancarios</label>
+                    <select class="form-select" name="settings[bank_deposits_default]">
+                        <option value="">Seleccione una cuenta...</option>
+                    </select>
+                    <small class="text-muted">Contrapartida al depositar dinero al banco (usualmente Caja)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cuenta de Retiros Bancarios</label>
+                    <select class="form-select" name="settings[bank_withdrawals_default]">
+                        <option value="">Seleccione una cuenta...</option>
+                    </select>
+                    <small class="text-muted">Contrapartida al retirar dinero del banco (usualmente Caja)</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cuenta de Ingresos Financieros</label>
+                    <select class="form-select" name="settings[financial_income]">
+                        <option value="">Seleccione una cuenta...</option>
+                    </select>
+                    <small class="text-muted">Para intereses bancarios ganados</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cuenta de Gastos Financieros</label>
+                    <select class="form-select" name="settings[financial_expenses]">
+                        <option value="">Seleccione una cuenta...</option>
+                    </select>
+                    <small class="text-muted">Para cargos bancarios y comisiones</small>
+                </div>
+            </div>
+
             <!-- Inventario y Gastos -->
             <h5 class="mt-4 mb-3"><i class="bi bi-box-seam"></i> Inventario y Gastos</h5>
             <div class="row g-3">
@@ -161,14 +198,49 @@ function loadAccounts() {
 }
 
 function populateSelects() {
-    var accountOptions = '<option value="">Seleccione una cuenta...</option>';
-    accounts.forEach(function(account) {
-        accountOptions += '<option value="' + account.id + '">' + account.name + '</option>';
-    });
+    // Definir qué tipos de cuenta son válidos para cada configuración
+    var accountTypeRules = {
+        // Ingresos
+        'sales_income': ['income'],
+        'sales_discount': ['expense', 'income'],
+        'financial_income': ['income'],
+
+        // Gastos
+        'purchases_expense': ['expense'],
+        'purchases_discount': ['income', 'expense'],
+        'expenses_default': ['expense'],
+        'financial_expenses': ['expense'],
+
+        // Activos
+        'cash': ['asset'],
+        'bank_default': ['asset'],
+        'bank_deposits_default': ['asset'],
+        'bank_withdrawals_default': ['asset'],
+        'accounts_receivable': ['asset'],
+        'inventory': ['asset'],
+
+        // Pasivos
+        'accounts_payable': ['liability'],
+
+        // Impuestos
+        'sales_tax': ['liability', 'asset'],
+        'purchases_tax': ['asset', 'liability']
+    };
 
     $('select[name^="settings"]').each(function() {
         var $select = $(this);
         var fieldName = $select.attr('name').match(/\[(.*?)\]/)[1];
+        var allowedTypes = accountTypeRules[fieldName] || null;
+
+        var accountOptions = '<option value="">Seleccione una cuenta...</option>';
+
+        accounts.forEach(function(account) {
+            // Si hay reglas de tipo definidas, filtrar por tipo
+            if (allowedTypes === null || allowedTypes.includes(account.account_type)) {
+                accountOptions += '<option value="' + account.id + '">' +
+                    account.code + ' - ' + account.name + '</option>';
+            }
+        });
 
         $select.html(accountOptions);
 
